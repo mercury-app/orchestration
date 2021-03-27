@@ -20,6 +20,9 @@ class MercuriNode:
         self._docker_img_name = docker_img_name
         self._docker_volume = docker_volume
 
+    def __str__(self) -> str:
+        return self._docker_img_name
+
     def trigger(self) -> str:
         logging.info(f"Running {self._docker_img_name}")
         container = docker_cl.containers.run(
