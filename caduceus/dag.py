@@ -1,6 +1,6 @@
 import networkx as nx
 
-from orchestrator.node import MercuriNode
+from caduceus.node import MercuriNode
 
 
 class MercuriDag:

@@ -1,8 +1,8 @@
 import logging
 import docker
 
-from orchestrator.docker_client import docker_cl
-from orchestrator.constants import DEFAULT_DOCKER_VOL_MODE, DOCKER_COMMON_VOLUME
+from caduceus.docker_client import docker_cl
+from caduceus.constants import DEFAULT_DOCKER_VOL_MODE, DOCKER_COMMON_VOLUME
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
