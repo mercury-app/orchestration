@@ -1,7 +1,18 @@
+# Caduceus
+
+
+### Start the server
+```
+cd caduceus
+python3 -m server.app
+```
+
+Go to localhost:8888
+
 
 ### Create some dummy dockers and some dummy files
 ```
-cd orchestrator/experimentation
+cd caduceus/experimentation
 ./build_test_dockers.sh 
 ```
 
@@ -22,7 +33,7 @@ experimentation/
 ### Triggering nodes
 
 ```
-from orchestrator.node import MercuriNode
+from caduceus.node import MercuriNode
 nodeA = MercuriNode(input = {"ai_1":"ai_1", "ai_2":"ai_2"}, output = {}, docker_volume="/usr/src/app", docker_img_name="nodea")
 nodeA.trigger()
 
@@ -37,7 +48,7 @@ nodeD.trigger()
 ```
 
 ```
-from orchestrator.dag import MercuriDag
+from caduceus.dag import MercuriDag
 mercuri_dag = MercuriDag()
 
 # add two nodes and define the edge between them
