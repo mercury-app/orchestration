@@ -11,9 +11,10 @@ class CaduceusHandler(tornado.web.RequestHandler):
 
 class DagInfo(tornado.web.RequestHandler):
     def get(self):
-        dag_props = json.dumps(
-            {"nodes": self.application.dag.nodes, "edges": self.application.dag.edges}
-        )
+        dag_props = {
+            "nodes": self.application.dag.nodes,
+            "edges": self.application.dag.edges,
+        }
         self.write(dag_props)
 
 
