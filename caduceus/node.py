@@ -1,5 +1,6 @@
 import logging
 import docker
+from uuid import uuid4
 
 from caduceus.docker_client import docker_cl
 from caduceus.constants import DEFAULT_DOCKER_VOL_MODE, DOCKER_COMMON_VOLUME
@@ -13,9 +14,10 @@ class MercuriNode:
         self,
         input: dict,
         output: dict = None,
-        docker_volume: str = None,
+        docker_volume: str = None,  # TODO: make a default docker volume
         docker_img_name: str = None,
     ):
+        self.id = uuid4().hex
         self._input = input
         self._output = output
 
