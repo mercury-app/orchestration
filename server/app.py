@@ -4,7 +4,7 @@ import tornado.ioloop  # for listening to port
 from caduceus.dag import MercuriDag
 from caduceus.node import MercuriNode
 
-from server.views import CaduceusHandler, AddNode, DagInfo
+from server.views import CaduceusHandler, NodeHandler, DagInfo
 
 
 class Application(tornado.web.Application):
@@ -14,10 +14,10 @@ class Application(tornado.web.Application):
         self.dag = MercuriDag()
         handlers = [
             (r"/", CaduceusHandler),
-            (r"/add_node", AddNode),
-            (r"/dag_info", DagInfo),
+            (r"/nodes/([^/]+)?", NodeHandler),
+            (r"/dag", DagInfo),
         ]
-        super().__init__(handlers)
+        super().__init__(handlers, debug=True)
 
 
 if __name__ == "__main__":
