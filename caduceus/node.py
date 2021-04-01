@@ -57,6 +57,22 @@ class MercuriNode:
     def exit_code(self):
         self._container_state = None
 
+    @property
+    def input(self) -> dict:
+        return self._input
+
+    @input.setter
+    def input(self, input_fields: dict) -> None:
+        self._input = input_fields
+
+    @property
+    def docker_img_name(self) -> str:
+        return self._docker_img_name
+
+    @docker_img_name.setter
+    def docker_img_name(self, img_name: str) -> None:
+        self._docker_img_name = img_name
+
     def trigger(self) -> str:
         logging.info(f"Running {self._docker_img_name}")
         self._container = docker_cl.containers.run(

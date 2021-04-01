@@ -24,6 +24,7 @@ class NodeHandler(CaduceusHandler):
             node = self.application.dag.get_node(node_id)
             node_props = vars(node)
             return self.write({"response": [node_props]})
+
         nodes = self.application.dag.nodes
         node_props = [vars(_) for _ in nodes]
         return self.write({"response": node_props})
@@ -36,6 +37,7 @@ class NodeHandler(CaduceusHandler):
         self.application.dag.add_node(node)
         print(self.application.dag.nodes)
         print("node added: ", node.id)
+
         response = {
             "response": {
                 "nodes": len(self.application.dag.nodes),
@@ -44,8 +46,22 @@ class NodeHandler(CaduceusHandler):
         }
         self.write(response)
 
+    def put(self, node_id):
+        data = json.loads(self.request.body)
+        print("data", data)
+        node = self.application.dag.get_node(node_id)
+
+        node.input = data.get("input", node.input)
+        node.docker_img_name = data.get("docker_img_name", node.docker_img_name)
+
+        node_props = vars(node)
+        self.write({"response": [node_props]})
+
+        # to do: updation for other properties
+
     def delete(self, node_id):
         node = self.application.dag.get_node(node_id)
         self.application.dag.remove_node(node)
+
         node_props = vars(node)
         self.write({"response": [node_props]})
