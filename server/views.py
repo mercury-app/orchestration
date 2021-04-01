@@ -22,7 +22,6 @@ class NodeHandler(CaduceusHandler):
     def get(self, node_id=None):
         if node_id:
             node = self.application.dag.get_node(node_id)
-            print(node.__dict__)
             node_props = vars(node)
             return self.write({"response": [node_props]})
         nodes = self.application.dag.nodes
@@ -37,4 +36,16 @@ class NodeHandler(CaduceusHandler):
         self.application.dag.add_node(node)
         print(self.application.dag.nodes)
         print("node added: ", node.id)
-        self.write("Nodes: " + str(len(self.application.dag.nodes)))
+        response = {
+            "response": {
+                "nodes": len(self.application.dag.nodes),
+                "edges": len(self.application.dag.edges),
+            }
+        }
+        self.write(response)
+
+    def delete(self, node_id):
+        node = self.application.dag.get_node(node_id)
+        self.application.dag.remove_node(node)
+        node_props = vars(node)
+        self.write({"response": [node_props]})
