@@ -33,15 +33,15 @@ class NodeHandler(CaduceusHandler):
     def post(self, _):
         data = json.loads(self.request.body)
         node = MercuriNode(**data)
-
         self.application.dag.add_node(node)
-        print(self.application.dag.nodes)
-        print("node added: ", node.id)
 
         response = {
             "response": {
-                "nodes": len(self.application.dag.nodes),
-                "edges": len(self.application.dag.edges),
+                "dag_info": {
+                    "nodes": len(self.application.dag.nodes),
+                    "edges": len(self.application.dag.edges),
+                },
+                "id": node.id,
             }
         }
         self.write(response)
