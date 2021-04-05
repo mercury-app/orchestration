@@ -1,9 +1,14 @@
 import logging
-import docker
 from uuid import uuid4
 
 from caduceus.docker_client import docker_cl
-from caduceus.constants import DEFAULT_DOCKER_VOL_MODE, DOCKER_COMMON_VOLUME
+from caduceus.constants import (
+    DEFAULT_DOCKER_VOL_MODE,
+    DOCKER_COMMON_VOLUME,
+    BASE_DOCKER_IMAGE_NAME,
+    BASE_DOCKER_BIND_VOLUME,
+)
+from caduceus.container import CaduceusContainer
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -12,7 +17,7 @@ logger = logging.getLogger(__name__)
 class MercuriNode:
     def __init__(
         self,
-        input: dict,
+        input: dict = None,
         output: dict = None,
         docker_volume: str = None,  # TODO: make a default docker volume
         docker_img_name: str = None,
@@ -24,38 +29,15 @@ class MercuriNode:
         self._docker_img_name = docker_img_name
         self._docker_volume = docker_volume
 
-        # following attributes is for container instance from docker-py
-        # and a dict for container-properties
         # Here, the container is itself changing on every execution
-        # might flesh this out later
-        self._container: docker.models.containers.Container = None
-        self._container_state: dict = None
+        self._caduceus_container: CaduceusContainer = None
 
     def __str__(self) -> str:
-        return self._docker_img_name
+        return self.id
 
     @property
-    def container(self) -> docker.models.containers.Container:
-        return self._container
-
-    @container.deleter
-    def container(self):
-        self._container.remove()
-        self._container = None
-        self._container_state = None
-
-    @property
-    def container_state(self) -> dict:
-        if self._container is None:
-            self._container_state = None
-            return self._container_state
-        self._container.reload()
-        self._container_state = self._container.attrs["State"]
-        return self._container_state
-
-    @container_state.deleter
-    def exit_code(self):
-        self._container_state = None
+    def caduceus_container(self) -> CaduceusContainer:
+        return self._caduceus_container
 
     @property
     def input(self) -> dict:
@@ -73,37 +55,66 @@ class MercuriNode:
     def docker_img_name(self, img_name: str) -> None:
         self._docker_img_name = img_name
 
-    def trigger(self) -> str:
-        logging.info(f"Running {self._docker_img_name}")
-        self._container = docker_cl.containers.run(
-            self._docker_img_name,
+    def initialise_container(self):
+        """This should start the jupyter notebook inside the docker container
+
+        Parameters
+        ----------
+        container : [type]
+            [description]
+
+        Returns
+        -------
+        str
+            container id of the running container
+        """
+        container_run = docker_cl.containers.run(
+            BASE_DOCKER_IMAGE_NAME,
             environment=self._input,
             volumes={
                 DOCKER_COMMON_VOLUME: {
-                    "bind": self._docker_volume,
+                    "bind": BASE_DOCKER_BIND_VOLUME,
                     "mode": DEFAULT_DOCKER_VOL_MODE,
                 }
             },
             detach=True,
         )
-        # TODO setter container id
-        return self._container.id
+        self._caduceus_container = CaduceusContainer(container_run)
+        logger.info(f"Initialised container {self._caduceus_container.container_id}")
 
-    def build(
+    def commit(
         self,
         build_img_name: str = None,
         build_img_tag: str = "latest",
     ) -> str:
-        if build_img_name is None:
-            build_img_name = self._docker_img_name
-        logging.info(
-            f"Building new docker image: {self._docker_img_name}:{build_img_tag}"
-        )
-        if self._container is None:
-            logger.error("This node does not have an attached container")
-
-        assert self.container_state["Running"]
-        self.container.commit(repository=build_img_name, tag=build_img_tag)
+        self._caduceus_container.commit(repository=build_img_name, tag=build_img_tag)
 
     def get_run_log(self) -> str:
         pass
+
+    # trigger can either start a new container if a container is not
+    # running for the node, or reuse the running container for running
+    # the workflow in the notebook.
+    def trigger(self) -> str:
+
+        if self._caduceus_container:
+            if self._caduceus_container.container_state["Running"]:
+                logging.info(
+                    f"Running in container {self._caduceus_container.container_id}"
+                )
+                exit_code, output = self._caduceus_container.container.exec_run(
+                    "echo 'dasdasds'"
+                )
+                logger.info(exit_code, output)
+                return output
+
+        else:
+            self.initialise_container()
+            exit_code, output = self._caduceus_container.container.exec_run(
+                "echo 'dasdasds'"
+            )
+            logging.info(
+                f"Running in container {self._caduceus_container.container_id}"
+            )
+            logger.info(exit_code, output)
+            return output
