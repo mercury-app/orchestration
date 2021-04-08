@@ -10,7 +10,6 @@ from caduceus.constants import (
 )
 from caduceus.container import CaduceusContainer
 
-logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 
@@ -46,6 +45,10 @@ class MercuriNode:
     @input.setter
     def input(self, input_fields: dict) -> None:
         self._input = input_fields
+
+    @property
+    def output(self) -> dict:
+        return self._output
 
     @property
     def docker_img_name(self) -> str:
