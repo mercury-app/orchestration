@@ -31,7 +31,9 @@ class MercuriDag:
         self._nxdag.add_edge(edge.source_node, edge.dest_node, object=edge)
 
     def remove_edge(self, edge: MercuriEdge) -> None:
-        self._nxdag.remove_edge(edge)
+        assert edge.source_node
+        assert edge.dest_node
+        self._nxdag.remove_edge(edge.source_node, edge.dest_node)
 
     def get_node(self, id: str) -> MercuriNode:
         node_search = [_ for _ in self._nxdag.nodes if _.id == id]
