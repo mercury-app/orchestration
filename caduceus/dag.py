@@ -2,6 +2,7 @@ import networkx as nx
 from typing import List
 
 from caduceus.node import MercuriNode
+from caduceus.edge import MercuriEdge
 
 
 class MercuriDag:
@@ -14,7 +15,7 @@ class MercuriDag:
 
     @property
     def edges(self) -> list:
-        return [(str(_[0]), str(_[1])) for _ in self._nxdag.edges]
+        return [_[2]["object"] for _ in self._nxdag.edges(data=True)]
 
     def add_node(self, node: MercuriNode) -> None:
         self._nxdag.add_node(node, id=node.id)
@@ -22,14 +23,27 @@ class MercuriDag:
     def remove_node(self, node: MercuriNode) -> None:
         self._nxdag.remove_node(node)
 
-    def add_edge(self, node1: MercuriNode, node2: MercuriNode) -> None:
-        self._nxdag.add_edge(node1, node2)
+    def add_edge(self, edge: MercuriEdge) -> None:
+        # not the most elegant, to do: change
+        assert edge.source_node
+        assert edge.dest_node
+
+        self._nxdag.add_edge(edge.source_node, edge.dest_node, object=edge)
+
+    def remove_edge(self, edge: MercuriEdge) -> None:
+        self._nxdag.remove_edge(edge)
 
     def get_node(self, id: str) -> MercuriNode:
         node_search = [_ for _ in self._nxdag.nodes if _.id == id]
         assert len(node_search) < 2
         if len(node_search) == 1:
             return node_search[0]
+
+    def get_edge(self, id: str) -> MercuriEdge:
+        edge_search = [_ for _ in self.edges if _.id == id]
+        assert len(edge_search) < 2
+        if len(edge_search) == 1:
+            return edge_search[0]
 
     # _nxdag.successors(node1)
     # _nxdag.predescessors(node1)
