@@ -50,6 +50,10 @@ class MercuriNode:
     def output(self) -> dict:
         return self._output
 
+    @output.setter
+    def output(self, output_fields: dict) -> None:
+        self._output = output_fields
+
     @property
     def docker_img_name(self) -> str:
         return self._docker_img_name
