@@ -66,6 +66,7 @@ class NodeHandler(CaduceusHandler):
         node = self.application.dag.get_node(node_id)
 
         node.input = data.get("input", node.input)
+        node.output = data.get("output", node.output)
         node.docker_img_name = data.get("docker_img_name", node.docker_img_name)
 
         node_props = {
@@ -150,6 +151,10 @@ class EdgeHandler(CaduceusHandler):
         edge.source_node = data.get("source_node", edge.source_node)
         edge.dest_node = data.get("dest_node", edge.source_node)
         edge.source_dest_connect = data.get(
+            "source_dest_connect", edge.source_dest_connect
+        )
+
+        self.source_dest_connect = data.get(
             "source_dest_connect", edge.source_dest_connect
         )
 
