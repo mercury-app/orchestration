@@ -10,6 +10,12 @@ python3 -m server.app
 Go to localhost:8888
 
 
+### TODO: API documentation
+
+[![Run in Postman](https://run.pstmn.io/button.svg)](https://app.getpostman.com/run-collection/7adb5e7a82f5292336d7)
+
+
+
 ### Create some dummy dockers and some dummy files
 ```
 cd caduceus/experimentation
