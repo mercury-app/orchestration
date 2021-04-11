@@ -1,8 +1,11 @@
 import tornado.web
 import json
+import logging
 
 from caduceus.node import MercuriNode
 from caduceus.edge import MercuriEdge
+
+logger = logging.getLogger(__name__)
 
 
 class CaduceusHandler(tornado.web.RequestHandler):
@@ -95,20 +98,33 @@ class NodeHandler(CaduceusHandler):
 
 
 class NodeContainerHandler(CaduceusHandler):
-    def put(self, node_id):
-        print("triggered put")
+    def post(self, node_id):
+        print("triggered put", node_id)
         data = json.loads(self.request.body)
         node = self.application.dag.get_node(node_id)
 
-        trigger = data.get("status", None)
+        container_cmd = data.get("status", None)
 
-        if trigger == "run":
-            print("triggering node")
-            container_id = node.trigger()
+        if container_cmd == "run":
+            exit_code, output = node.run()
+            logger.info(f"Exit code: {exit_code}")
+            logger.info(f"Output: {output}")
 
-        response = {"response": {"container": {"id": container_id}}}
+        if container_cmd == "commit":
+            assert "image_name" in data.keys()
+            img_name = data.get("image_name")
+            img_tag = data.get("image_tag", "latest")
+            node.caduceus_container.commit(img_name, img_tag)
 
-        return response
+        response = {
+            "id": node.id,
+            "container": {
+                "container_id": node.caduceus_container.container_id,
+                "container_state": node.caduceus_container.container_state,
+            },
+        }
+
+        self.write({"response": response})
 
 
 class EdgeHandler(CaduceusHandler):
