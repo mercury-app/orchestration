@@ -25,7 +25,7 @@ class Application(tornado.web.Application):
         self.dag = MercuriDag()
         handlers = [
             (r"/", CaduceusHandler),
-            (r"/nodes/([^/]+)?/trigger", NodeContainerHandler),
+            (r"/nodes/([^/]+)/status", NodeContainerHandler),
             (r"/nodes/([^/]+)?", NodeHandler),
             (r"/edges/([^/]+)?", EdgeHandler),
             (r"/dag", DagInfo),
