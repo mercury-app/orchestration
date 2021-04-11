@@ -1,7 +1,7 @@
 # Caduceus
 
-
 ### Start the server
+
 ```
 cd caduceus
 python3 -m server.app
@@ -9,17 +9,22 @@ python3 -m server.app
 
 Go to localhost:8888
 
+### get minimal jupyter docker image
+
+
+```
+docker pull jupyter/minimal-notebook
+```
 
 ### TODO: API documentation
 
 [![Run in Postman](https://run.pstmn.io/button.svg)](https://app.getpostman.com/run-collection/7adb5e7a82f5292336d7)
 
-
-
 ### Create some dummy dockers and some dummy files
+
 ```
 cd caduceus/experimentation
-./build_test_dockers.sh 
+./build_test_dockers.sh
 ```
 
 ```
