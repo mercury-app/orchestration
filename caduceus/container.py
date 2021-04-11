@@ -39,13 +39,14 @@ class CaduceusContainer:
         build_img_name: str = None,
         build_img_tag: str = "latest",
     ):
+        logger.info(
+            f"Committing the container to image {build_img_name}:{build_img_tag}"
+        )
         if build_img_name is None:
             build_img_name = self._docker_img_name
-        logging.info(
-            f"Building new docker image: {self._docker_img_name}:{build_img_tag}"
-        )
+        logging.info(f"Building new docker image: {build_img_name}:{build_img_tag}")
         if self._container is None:
             logger.error("This node does not have an attached container")
 
         assert self.container_state["Running"]
-        self.container.commit(repository=build_img_name, tag=build_img_tag)
+        self._container.commit(repository=build_img_name, tag=build_img_tag)
