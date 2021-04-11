@@ -99,21 +99,27 @@ class MercuriNode:
     def get_run_log(self) -> str:
         pass
 
-    # trigger can either start a new container if a container is not
+    # run can either start a new container if a container is not
     # running for the node, or reuse the running container for running
     # the workflow in the notebook.
-    def trigger(self) -> str:
+    def run(self) -> str:
+        """Run the node end to end.
 
+        Returns
+        -------
+        str
+            [description]
+        """
+        logger.info("Running container")
         if self._caduceus_container:
             if self._caduceus_container.container_state["Running"]:
-                logging.info(
+                logger.info(
                     f"Running in container {self._caduceus_container.container_id}"
                 )
                 exit_code, output = self._caduceus_container.container.exec_run(
                     "echo 'dasdasds'"
                 )
-                logger.info(exit_code, output)
-                return output
+                return exit_code, output
 
         else:
             self.initialise_container()
@@ -123,5 +129,4 @@ class MercuriNode:
             logging.info(
                 f"Running in container {self._caduceus_container.container_id}"
             )
-            logger.info(exit_code, output)
-            return output
+            return exit_code, output
