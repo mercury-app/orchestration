@@ -18,6 +18,11 @@ docker pull jupyter/minimal-notebook
 
 ### TODO: API documentation
 
+#### View swagger API docs
+
+Go to http://localhost:8888/swagger/spec.html
+
+
 [![Run in Postman](https://run.pstmn.io/button.svg)](https://app.getpostman.com/run-collection/7adb5e7a82f5292336d7)
 
 ### Create some dummy dockers and some dummy files
