@@ -1,5 +1,7 @@
 import logging
 from uuid import uuid4
+import copy
+
 
 from caduceus.docker_client import docker_cl
 from caduceus.constants import (
@@ -25,8 +27,9 @@ class MercuriNode:
         self._input = input
         self._output = output
 
-        self._docker_img_name = docker_img_name
+        self._docker_img_name = copy.copy(self.id)
         self._docker_volume = docker_volume
+        self._docker_img_tag = "0"
 
         # Here, the container is itself changing on every execution
         self._caduceus_container: CaduceusContainer = None
@@ -58,9 +61,9 @@ class MercuriNode:
     def docker_img_name(self) -> str:
         return self._docker_img_name
 
-    @docker_img_name.setter
-    def docker_img_name(self, img_name: str) -> None:
-        self._docker_img_name = img_name
+    @property
+    def docker_img_tag(self) -> str:
+        return self._docker_img_tag
 
     def initialise_container(self):
         """This should start the jupyter notebook inside the docker container
@@ -89,12 +92,11 @@ class MercuriNode:
         self._caduceus_container = CaduceusContainer(container_run)
         logger.info(f"Initialised container {self._caduceus_container.container_id}")
 
-    def commit(
-        self,
-        build_img_name: str = None,
-        build_img_tag: str = "latest",
-    ) -> str:
-        self._caduceus_container.commit(repository=build_img_name, tag=build_img_tag)
+    def commit(self) -> str:
+        self._docker_img_tag = str(int(self._docker_img_tag) + 1)
+        self._caduceus_container.commit(
+            build_img_name=self._docker_img_name, build_img_tag=self._docker_img_tag
+        )
 
     def get_run_log(self) -> str:
         pass
