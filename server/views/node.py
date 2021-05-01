@@ -7,6 +7,8 @@ from server.views import CaduceusHandler
 
 logger = logging.getLogger(__name__)
 
+JUPYTER_PORT = "8888"
+
 
 class NodeHandler(CaduceusHandler):
     def get(self, node_id=None):
@@ -43,9 +45,11 @@ class NodeHandler(CaduceusHandler):
                 "input": _.input,
                 "output": _.output,
                 "docker_img_name": _.docker_img_name,
+                "docker_img_tag": _.docker_img_tag,
                 "container": {
                     "container_id": _.caduceus_container.container_id,
                     "container_state": _.caduceus_container.container_state,
+                    "notebook_url": f"http://localhost:{JUPYTER_PORT}/notebooks/Untitled.ipynb?kernel_name=python3",
                 },
             }
             for _ in nodes
@@ -87,6 +91,7 @@ class NodeHandler(CaduceusHandler):
             "response": {
                 "id": node.id,
                 "container_id": node.caduceus_container.container_id,
+                "notebook_url": f"http://localhost:{JUPYTER_PORT}/notebooks/Untitled.ipynb?kernel_name=python3",
             }
         }
         self.write(response)
@@ -119,13 +124,13 @@ class NodeHandler(CaduceusHandler):
 
         node.input = data.get("input", node.input)
         node.output = data.get("output", node.output)
-        node.docker_img_name = data.get("docker_img_name", node.docker_img_name)
 
         node_props = {
             "id": node.id,
             "container": {
                 "container_id": node.caduceus_container.container_id,
                 "container_state": node.caduceus_container.container_state,
+                "notebook_url": f"http://localhost:{JUPYTER_PORT}/notebooks/Untitled.ipynb?kernel_name=python3",
             },
         }
         self.write({"response": [node_props]})
@@ -181,10 +186,7 @@ class NodeContainerHandler(CaduceusHandler):
             logger.info(f"Output: {output}")
 
         if container_cmd == "commit":
-            assert "image_name" in data.keys()
-            img_name = data.get("image_name")
-            img_tag = data.get("image_tag", "latest")
-            node.caduceus_container.commit(img_name, img_tag)
+            node.commit()
 
         response = {
             "id": node.id,
@@ -192,6 +194,8 @@ class NodeContainerHandler(CaduceusHandler):
                 "container_id": node.caduceus_container.container_id,
                 "container_state": node.caduceus_container.container_state,
             },
+            "docker_img_name": node.docker_img_name,
+            "docker_img_tag": node.docker_img_tag,
         }
 
         self.write({"response": response})
