@@ -25,26 +25,6 @@ https://documenter.getpostman.com/view/2281095/TzK16F5A
 
 [![Run in Postman](https://run.pstmn.io/button.svg)](https://app.getpostman.com/run-collection/7adb5e7a82f5292336d7)
 
-### Create some dummy dockers and some dummy files
-
-```
-cd caduceus/experimentation
-./build_test_dockers.sh
-```
-
-```
-tree experimentation/
-```
-
-```
-experimentation/
-├── build_test_dockers.sh
-├── common_volume
-│   ├── ai_1
-│   ├── ai_2
-│   ├── bi_2
-│   ├── ci_2
-```
 
 ### Triggering nodes
 
