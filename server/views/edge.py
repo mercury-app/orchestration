@@ -64,6 +64,9 @@ class EdgeHandler(CaduceusHandler):
         dest_node = self.application.dag.get_node(data.get("dest_node", None))
         source_dest_connect = data.get("source_dest_connect", None)
 
+        if not source_dest_connect:
+            raise Exception("source input output map required")
+
         source_dest_map = list()
         for _ in source_dest_connect:
             assert (len(_)) == 2
