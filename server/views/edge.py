@@ -1,6 +1,8 @@
 import json
 import logging
 
+from caduceus.edge import MercuriEdge
+
 from server.views import CaduceusHandler
 
 logger = logging.getLogger(__name__)
@@ -29,7 +31,6 @@ class EdgeHandler(CaduceusHandler):
         else:
             edges = self.application.dag.edges
 
-        print(edges)
         edge_props = [
             {
                 "id": _.id,
@@ -61,12 +62,25 @@ class EdgeHandler(CaduceusHandler):
 
         source_node = self.application.dag.get_node(data.get("source_node", None))
         dest_node = self.application.dag.get_node(data.get("dest_node", None))
-        source_dest_connect = data.get("source_dest_connect", set())
+        source_dest_connect = data.get("source_dest_connect", None)
 
-        edge = MercuriEdge(source_node, dest_node, source_dest_connect)
+        source_dest_map = list()
+        for _ in source_dest_connect:
+            assert (len(_)) == 2
+            source_dest_map.append({"input": _[0], "output": _[1]})
+
+        edge = MercuriEdge(source_node, dest_node)
+        edge.source_dest_connect = source_dest_map
         self.application.dag.add_edge(edge)
 
-        edge_props = {"response": {"id": edge.id}}
+        edge_props = {
+            "response": {
+                "id": edge.id,
+                "source_node": edge.source_node.id,
+                "dest_node": edge.dest_node.id,
+                "source_dest_connect": list(edge.source_dest_connect),
+            }
+        }
         self.write(edge_props)
 
     def put(self, edge_id):
@@ -90,15 +104,24 @@ class EdgeHandler(CaduceusHandler):
 
         edge.source_node = data.get("source_node", edge.source_node)
         edge.dest_node = data.get("dest_node", edge.source_node)
-        edge.source_dest_connect = data.get(
-            "source_dest_connect", edge.source_dest_connect
-        )
+        source_dest_connect = data.get("source_dest_connect", None)
 
-        self.source_dest_connect = data.get(
-            "source_dest_connect", edge.source_dest_connect
-        )
+        if source_dest_connect:
+            source_dest_map = list()
+            for _ in source_dest_connect:
+                assert (len(_)) == 2
+                source_dest_map.append({"input": _[0], "output": _[1]})
 
-        edge_props = {"response": {"id": edge.id}}
+            edge.source_dest_connect = source_dest_map
+
+        edge_props = {
+            "response": {
+                "id": edge.id,
+                "source_node": edge.source_node.id,
+                "dest_node": edge.dest_node.id,
+                "source_dest_connect": list(edge.source_dest_connect),
+            }
+        }
         self.write({"response": [edge_props]})
 
     def delete(self, edge_id):
