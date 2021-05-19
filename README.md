@@ -10,11 +10,11 @@ python3 -m server.app
 
 Go to localhost:8888
 
-### get minimal jupyter docker image
-
+### Build the caduceus docker image for mercuri
 
 ```
-docker pull jupyter/minimal-notebook
+cd docker/jupyter
+docker build . -t jupyter-caduceus:latest
 ```
 
 ### TODO: API documentation
@@ -22,9 +22,7 @@ docker pull jupyter/minimal-notebook
 Docs in Postman
 https://documenter.getpostman.com/view/2281095/TzK16F5A
 
-
 [![Run in Postman](https://run.pstmn.io/button.svg)](https://app.getpostman.com/run-collection/7adb5e7a82f5292336d7)
-
 
 ### Triggering nodes
 
