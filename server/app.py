@@ -20,9 +20,9 @@ class Application(tornado.web.Application):
         self.dag = MercuriDag()
         self.handlers = [
             (r"/", CaduceusHandler),
-            (r"/nodes/([^/]+)/status", NodeContainerHandler),
-            (r"/nodes/([^/]+)?", NodeHandler),
-            (r"/edges/([^/]+)?", EdgeHandler),
+            (r"/nodes/([^/\s]+)/status", NodeContainerHandler),
+            (r"/nodes(?:/([^/\s]+))?", NodeHandler),
+            (r"/edges(?:/([^/\s]+))?", EdgeHandler),
             (r"/dag", DagInfoHandler),
         ]
         super().__init__(self.handlers, debug=True)
