@@ -1,14 +1,27 @@
 # Caduceus
 
-### Start the server
+### Usage
+
+#### Install dependencies and activate virtual environment
+
+Install poetry - https://python-poetry.org/docs/basic-usage/
 
 ```
 cd caduceus
-pip3 install -r requirements.txt
+poetry install
+poetry shell
+```
+
+#### Start the server
+```
 python3 -m server.app
 ```
 
 Go to localhost:8888
+
+### Contributing 
+
+If you install a new dependency or update an existing dependency, commit the `poetry.lock` file as well.
 
 ### Build the caduceus docker image for mercuri
 
@@ -17,7 +30,7 @@ cd docker/jupyter
 docker build . -t jupyter-caduceus:latest
 ```
 
-### TODO: API documentation
+### API documentation
 
 Docs in Postman
 https://documenter.getpostman.com/view/2281095/TzK16F5A
