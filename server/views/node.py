@@ -4,6 +4,7 @@ import logging
 from caduceus.node import MercuriNode
 
 from server.views import CaduceusHandler
+from server.views.utils import get_node_attrs
 
 logger = logging.getLogger(__name__)
 
@@ -11,6 +12,9 @@ JUPYTER_PORT = "8888"
 
 
 class NodeHandler(CaduceusHandler):
+    # decorator to wrap and create a json api response, wrap in data, attributes, types
+    json_type = "nodes"
+
     def get(self, node_id=None):
         """Returns the node(s) available
         ---
@@ -39,22 +43,14 @@ class NodeHandler(CaduceusHandler):
         else:
             nodes = self.application.dag.nodes
 
-        node_props = [
-            {
-                "id": _.id,
-                "input": _.input,
-                "output": _.output,
-                "docker_img_name": _.docker_img_name,
-                "docker_img_tag": _.docker_img_tag,
-                "container": {
-                    "container_id": _.caduceus_container.container_id,
-                    "container_state": _.caduceus_container.container_state,
-                    "notebook_url": f"http://localhost:{JUPYTER_PORT}/notebooks/Untitled.ipynb?kernel_name=python3",
-                },
-            }
+        data = [
+            {"id": _.id, "type": self.json_type, "attributes": get_node_attrs(_)}
             for _ in nodes
         ]
-        return self.write({"response": node_props})
+
+        self.set_status(200)
+        self.write({"data": data[0] if node_id else data})
+        self.set_header("Content-Type", "application/vnd.api+json")
 
     # _ parameter added as post expects two arguments from route
     def post(self, _):
@@ -83,20 +79,25 @@ class NodeHandler(CaduceusHandler):
                                 NoSchema
         """
         data = json.loads(self.request.body)
-        node = MercuriNode(**data)
-        node.initialise_container()
+        node = MercuriNode(**data.get("attributes", {}))
+
+        # add the node to the dag first, as this sets the jupyter port
         self.application.dag.add_node(node)
 
-        response = {
-            "response": {
-                "id": node.id,
-                "container_id": node.caduceus_container.container_id,
-                "notebook_url": f"http://localhost:{JUPYTER_PORT}/notebooks/Untitled.ipynb?kernel_name=python3",
-            }
-        }
-        self.write(response)
+        node.initialise_container()
 
-    def put(self, node_id):
+        data = {
+            "id": node.id,
+            "type": self.json_type,
+            "attributes": get_node_attrs(node),
+        }
+
+        self.set_status(201)
+        self.add_header("Location", f"/nodes/{node.id}")
+        self.write({"data": data})
+        self.set_header("Content-Type", "application/vnd.api+json")
+
+    def patch(self, node_id):
         """Updates properties of a node
         ---
         tags: [Nodes]
@@ -119,21 +120,20 @@ class NodeHandler(CaduceusHandler):
                                 NoSchema
         """
         data = json.loads(self.request.body)
-        print("data", data)
         node = self.application.dag.get_node(node_id)
 
-        node.input = data.get("input", node.input)
-        node.output = data.get("output", node.output)
+        node.input = data["data"].get("attributes", {}).get("input", node.input)
+        node.output = data["data"].get("attributes", {}).get("output", node.output)
 
-        node_props = {
+        data = {
             "id": node.id,
-            "container": {
-                "container_id": node.caduceus_container.container_id,
-                "container_state": node.caduceus_container.container_state,
-                "notebook_url": f"http://localhost:{JUPYTER_PORT}/notebooks/Untitled.ipynb?kernel_name=python3",
-            },
+            "type": self.json_type,
+            "attributes": get_node_attrs(node),
         }
-        self.write({"response": [node_props]})
+
+        self.set_status(200)
+        self.write({"data": data})
+        self.set_header("Content-Type", "application/vnd.api+json")
 
         # to do: updation for other properties
 
@@ -162,14 +162,10 @@ class NodeHandler(CaduceusHandler):
         node = self.application.dag.get_node(node_id)
         self.application.dag.remove_node(node)
 
-        node_props = {
-            "id": node.id,
-            "container": {
-                "container_id": node.caduceus_container.container_id,
-                "container_state": node.caduceus_container.container_state,
-            },
-        }
-        self.write({"response": [node_props]})
+        self.set_status(204)
+        self.set_header("Content-Type", "application/vnd.api+json")
+
+        # self.write({"response": [node_props]})
 
 
 class NodeContainerHandler(CaduceusHandler):
