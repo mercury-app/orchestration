@@ -160,6 +160,7 @@ class NodeHandler(CaduceusHandler):
                                 NoSchema
         """
         node = self.application.dag.get_node(node_id)
+        node.caduceus_container.container.kill()
         self.application.dag.remove_node(node)
 
         self.set_status(204)
