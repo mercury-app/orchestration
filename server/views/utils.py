@@ -10,7 +10,7 @@ def get_node_attrs(node: MercuriNode) -> dict:
         "docker_img_tag": node.docker_img_tag,
         "container_id": node.caduceus_container.container_id,
         "container_state": node.caduceus_container.container_state,
-        "notebook_url": f"http://localhost:{node.jupyter_port}/work/scripts/Untitled.ipynb?kernel_name=python3",
+        "notebook_url": f"http://localhost:{node.jupyter_port}/notebooks/work/scripts/Untitled.ipynb?kernel_name=python3",
     }
 
 
