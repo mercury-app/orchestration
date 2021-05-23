@@ -3,6 +3,7 @@ import tornado.ioloop  # for listening to port
 import logging
 
 from caduceus.dag import MercuriDag
+from caduceus.docker_client import docker_cl
 
 from server.views import CaduceusHandler
 from server.views.dag import DagInfoHandler
@@ -29,8 +30,16 @@ class Application(tornado.web.Application):
 
 
 if __name__ == "__main__":
+    # kill all running caduceus containers
+    logger.info("Killing already running containers")
+    [
+        _.kill()
+        for _ in docker_cl.containers.list()
+        if _.image.tags[0] == "jupyter-caduceus:latest"
+    ]
+
     app = Application()
 
     app.listen(8888)
-    logging.info("running on port 8888")
+    logging.info("Running on port 8888")    
     tornado.ioloop.IOLoop.current().start()
