@@ -18,8 +18,8 @@ logger = logging.getLogger(__name__)
 class MercuriNode:
     def __init__(
         self,
-        input: dict = None,
-        output: dict = None,
+        input: list = None,
+        output: list = None,
         docker_volume: str = None,  # TODO: make a default docker volume
         docker_img_name: str = None,
     ):
@@ -33,6 +33,7 @@ class MercuriNode:
 
         # Here, the container is itself changing on every execution
         self._caduceus_container: CaduceusContainer = None
+        self._jupyter_port: int = 8880
 
     def __str__(self) -> str:
         return self.id
@@ -42,19 +43,19 @@ class MercuriNode:
         return self._caduceus_container
 
     @property
-    def input(self) -> dict:
+    def input(self) -> list:
         return self._input
 
     @input.setter
-    def input(self, input_fields: dict) -> None:
+    def input(self, input_fields: list) -> None:
         self._input = input_fields
 
     @property
-    def output(self) -> dict:
+    def output(self) -> list:
         return self._output
 
     @output.setter
-    def output(self, output_fields: dict) -> None:
+    def output(self, output_fields: list) -> None:
         self._output = output_fields
 
     @property
@@ -64,6 +65,14 @@ class MercuriNode:
     @property
     def docker_img_tag(self) -> str:
         return self._docker_img_tag
+
+    @property
+    def jupyter_port(self) -> int:
+        return self._jupyter_port
+
+    @jupyter_port.setter
+    def jupyter_port(self, port: int) -> int:
+        self._jupyter_port = port
 
     def initialise_container(self):
         """This should start the jupyter notebook inside the docker container
@@ -88,6 +97,7 @@ class MercuriNode:
                 }
             },
             detach=True,
+            ports={"8888/tcp": self._jupyter_port},
         )
         self._caduceus_container = CaduceusContainer(container_run)
         logger.info(f"Initialised container {self._caduceus_container.container_id}")
