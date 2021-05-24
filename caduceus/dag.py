@@ -1,6 +1,7 @@
 import networkx as nx
 import logging
 from typing import List
+from uuid import uuid4
 
 from caduceus.node import MercuriNode
 from caduceus.edge import MercuriEdge
@@ -10,6 +11,7 @@ logger = logging.getLogger(__name__)
 
 class MercuriDag:
     def __init__(self):
+        self.id = uuid4().hex
         self._nxdag = nx.DiGraph()
 
     @property
