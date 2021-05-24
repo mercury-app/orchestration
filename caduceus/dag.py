@@ -1,8 +1,11 @@
 import networkx as nx
+import logging
 from typing import List
 
 from caduceus.node import MercuriNode
 from caduceus.edge import MercuriEdge
+
+logger = logging.getLogger(__name__)
 
 
 class MercuriDag:
@@ -18,6 +21,13 @@ class MercuriDag:
         return [_[2]["object"] for _ in self._nxdag.edges(data=True)]
 
     def add_node(self, node: MercuriNode) -> None:
+
+        if len(self._nxdag.nodes) > 0:
+            used_ports = [_.jupyter_port for _ in self._nxdag.nodes]
+            print(used_ports)
+            port = max(used_ports) + 1
+            logger.info(f"Starting new container and mapping to port {port}")
+            node.jupyter_port = port
         self._nxdag.add_node(node, id=node.id)
 
     def remove_node(self, node: MercuriNode) -> None:
