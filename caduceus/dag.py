@@ -1,7 +1,9 @@
 import networkx as nx
 import logging
-from typing import List
+from typing import List, Dict
 from uuid import uuid4
+
+from networkx.algorithms.dag import ancestors, descendants
 
 from caduceus.node import MercuriNode
 from caduceus.edge import MercuriEdge
@@ -72,5 +74,20 @@ class MercuriDag:
         if len(edge_search) == 1:
             return edge_search[0]
 
-    # _nxdag.successors(node1)
-    # _nxdag.predescessors(node1)
+    def get_valid_destinations_for_nodes(self) -> Dict[MercuriNode, List[MercuriNode]]:
+        all_nodes = set(self._nxdag.nodes)
+        valid_edges_per_nodes = {}
+        for node in self._nxdag.nodes:
+            ancestors_of_node = ancestors(self._nxdag, node)
+            descendants_of_node = descendants(self._nxdag, node)
+            reachable_nodes = set()
+            reachable_nodes.add(node)
+            reachable_nodes = reachable_nodes.union(ancestors_of_node).union(
+                descendants_of_node
+            )
+            unreachable_nodes = all_nodes.difference(reachable_nodes)
+            valid_edges_per_nodes[node] = (
+                list(unreachable_nodes) if unreachable_nodes is not None else []
+            )
+
+        return valid_edges_per_nodes
