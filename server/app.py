@@ -8,7 +8,6 @@ from caduceus.docker_client import docker_cl
 from server.views import CaduceusHandler
 from server.views.dag import DagInfoHandler
 from server.views.node import NodeHandler, NodeContainerHandler
-from server.views.edge import EdgeHandler
 from server.views.connector import ConnectorHandler
 
 logging.basicConfig(level=logging.INFO)
@@ -24,7 +23,6 @@ class Application(tornado.web.Application):
             (r"/", CaduceusHandler),
             (r"/nodes/([^/\s]+)/status", NodeContainerHandler),
             (r"/nodes(?:/([^/\s]+))?", NodeHandler),
-            (r"/edges(?:/([^/\s]+))?", EdgeHandler),
             (r"/connector(?:/([^/\s]+))?", ConnectorHandler),
             (r"/dag", DagInfoHandler),
         ]
