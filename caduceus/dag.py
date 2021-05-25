@@ -74,7 +74,7 @@ class MercuriDag:
         if len(edge_search) == 1:
             return edge_search[0]
 
-    def get_valid_destinations_for_nodes(self) -> Dict[MercuriNode, List[MercuriNode]]:
+    def get_valid_connections_for_nodes(self) -> Dict[MercuriNode, List[MercuriNode]]:
         all_nodes = set(self._nxdag.nodes)
         valid_edges_per_nodes = {}
         for node in self._nxdag.nodes:

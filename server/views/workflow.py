@@ -1,6 +1,8 @@
 import logging
 
 from server.views import CaduceusHandler
+from server.views.node import NodeHandler
+from server.views.connector import ConnectorHandler
 
 logger = logging.getLogger(__name__)
 
@@ -9,24 +11,32 @@ class WorkflowHandler(CaduceusHandler):
     json_type = "workflow"
 
     def get(self):
-        valid_destinations = self.application.dag.get_valid_destinations_for_nodes()
+        nodes = [
+            {"id": node.id, "type": NodeHandler.json_type}
+            for node in self.application.dag.nodes
+        ]
+
+        connectors = []
+        for _e in self.application.dag.edges:
+            for _c in _e.source_dest_connect:
+                connector = {
+                    "id": _c["connector_id"],
+                    "type": ConnectorHandler.json_type,
+                }
+                connectors.append(connector)
+
+        valid_connections = self.application.dag.get_valid_connections_for_nodes()
+        valid_connections = {
+            src.id: [dest.id for dest in valid_connections.get(src)]
+            for src in valid_connections
+        }
         data = {
             "id": self.application.dag.id,
             "type": self.json_type,
             "attributes": {
-                "nodes": [
-                    {
-                        "id": node.id,
-                        "valid_destinations": [
-                            dest.id for dest in valid_destinations.get(node)
-                        ],
-                    }
-                    for node in self.application.dag.nodes
-                ],
-                "edges": [
-                    {"edge": (edge.source_node.id, edge.dest_node.id), "id": edge.id}
-                    for edge in self.application.dag.edges
-                ],
+                "nodes": nodes,
+                "connectors": connectors,
+                "valid_connections": valid_connections,
             },
         }
 
