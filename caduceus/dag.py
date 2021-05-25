@@ -57,5 +57,18 @@ class MercuriDag:
         if len(edge_search) == 1:
             return edge_search[0]
 
+    def get_edge_from_nodes(
+        self, source_node_id: str, detination_node_id: str
+    ) -> MercuriEdge:
+        edge_search = [
+            _
+            for _ in self.edges
+            if _.source_node.id == source_node_id
+            and _.dest_node.id == detination_node_id
+        ]
+        assert len(edge_search) < 3
+        if len(edge_search) == 1:
+            return edge_search[0]
+
     # _nxdag.successors(node1)
     # _nxdag.predescessors(node1)

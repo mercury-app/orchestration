@@ -8,7 +8,7 @@ from caduceus.docker_client import docker_cl
 from server.views import CaduceusHandler
 from server.views.dag import DagInfoHandler
 from server.views.node import NodeHandler, NodeContainerHandler
-from server.views.edge import EdgeHandler
+from server.views.connector import ConnectorHandler
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -23,7 +23,7 @@ class Application(tornado.web.Application):
             (r"/", CaduceusHandler),
             (r"/nodes/([^/\s]+)/status", NodeContainerHandler),
             (r"/nodes(?:/([^/\s]+))?", NodeHandler),
-            (r"/edges(?:/([^/\s]+))?", EdgeHandler),
+            (r"/connector(?:/([^/\s]+))?", ConnectorHandler),
             (r"/dag", DagInfoHandler),
         ]
         super().__init__(self.handlers, debug=True)
@@ -41,5 +41,5 @@ if __name__ == "__main__":
     app = Application()
 
     app.listen(8888)
-    logging.info("Running on port 8888")    
+    logging.info("Running on port 8888")
     tornado.ioloop.IOLoop.current().start()

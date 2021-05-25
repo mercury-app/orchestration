@@ -10,7 +10,7 @@ class MercuriEdge:
         self,
         source_node: MercuriNode = None,
         dest_node: MercuriNode = None,
-        source_dest_connect: list = None,
+        source_dest_connect: list = [],
     ):
 
         self.id = uuid4().hex
