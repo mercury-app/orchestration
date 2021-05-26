@@ -10,7 +10,7 @@ logger = logging.getLogger(__name__)
 
 
 class ConnectorHandler(CaduceusHandler):
-    json_type = "connector"
+    json_type = "connectors"
 
     def get(self, connector_id):
 
