@@ -23,7 +23,7 @@ class Application(tornado.web.Application):
             (r"/", CaduceusHandler),
             (r"/nodes/([^/\s]+)/status", NodeContainerHandler),
             (r"/nodes(?:/([^/\s]+))?", NodeHandler),
-            (r"/connector(?:/([^/\s]+))?", ConnectorHandler),
+            (r"/connectors(?:/([^/\s]+))?", ConnectorHandler),
             (r"/dag", DagInfoHandler),
         ]
         super().__init__(self.handlers, debug=True)
