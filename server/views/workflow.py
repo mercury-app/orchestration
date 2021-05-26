@@ -8,7 +8,7 @@ logger = logging.getLogger(__name__)
 
 
 class WorkflowHandler(CaduceusHandler):
-    json_type = "workflow"
+    json_type = "workflows"
 
     def get(self):
         nodes = [
@@ -41,5 +41,5 @@ class WorkflowHandler(CaduceusHandler):
         }
 
         self.set_status(200)
-        self.write({"data": data})
+        self.write({"data": [data]})
         self.set_header("Content-Type", "application/vnd.api+json")

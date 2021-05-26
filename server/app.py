@@ -24,7 +24,7 @@ class Application(tornado.web.Application):
             (r"/nodes/([^/\s]+)/status", NodeContainerHandler),
             (r"/nodes(?:/([^/\s]+))?", NodeHandler),
             (r"/connectors(?:/([^/\s]+))?", ConnectorHandler),
-            (r"/workflow", WorkflowHandler),
+            (r"/workflows", WorkflowHandler),
         ]
         super().__init__(self.handlers, debug=True)
 
