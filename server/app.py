@@ -6,7 +6,7 @@ from caduceus.dag import MercuriDag
 from caduceus.docker_client import docker_cl
 
 from server.views import CaduceusHandler
-from server.views.dag import DagInfoHandler
+from server.views.workflow import WorkflowHandler
 from server.views.node import NodeHandler, NodeContainerHandler
 from server.views.connector import ConnectorHandler
 
@@ -24,7 +24,7 @@ class Application(tornado.web.Application):
             (r"/nodes/([^/\s]+)/status", NodeContainerHandler),
             (r"/nodes(?:/([^/\s]+))?", NodeHandler),
             (r"/connectors(?:/([^/\s]+))?", ConnectorHandler),
-            (r"/dag", DagInfoHandler),
+            (r"/workflows", WorkflowHandler),
         ]
         super().__init__(self.handlers, debug=True)
 
