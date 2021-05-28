@@ -136,7 +136,10 @@ class ConnectorHandler(CaduceusHandler):
 
         connector_edge.source_dest_connect.pop(del_i)
 
-        # to do: delete an edge if all connectors are deleted?
+        # Delete an edge if all connectors related to an edge
+        # have been deleted
+        if len(connector_edge.source_dest_connect) == 0:
+            self.application.dag.remove_edge(connector_edge)
 
         self.set_status(204)
         self.set_header("Content-Type", "application/vnd.api+json")
