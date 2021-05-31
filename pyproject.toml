@@ -1,7 +1,7 @@
 [tool.poetry]
-name = "caduceus"
+name = "mercury-orchestration"
 version = "0.1.0"
-description = "node orchestration service for mercuri"
+description = "Node orchestration service for Mercury"
 authors = ["Saksham Malhotra <saksham2196@gmail.com>", "Saiful Khan <saifulbkhan@gmail.com>"]
 
 [tool.poetry.dependencies]

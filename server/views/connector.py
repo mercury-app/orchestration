@@ -2,14 +2,14 @@ import json
 import logging
 from uuid import uuid4
 
-from caduceus.edge import MercuriEdge
+from mercury.edge import MercuryEdge
 
-from server.views import CaduceusHandler
+from server.views import MercuryHandler
 
 logger = logging.getLogger(__name__)
 
 
-class ConnectorHandler(CaduceusHandler):
+class ConnectorHandler(MercuryHandler):
     json_type = "connectors"
 
     def get(self, connector_id):
@@ -91,7 +91,7 @@ class ConnectorHandler(CaduceusHandler):
         )
 
         if not edge:
-            edge = MercuriEdge(source_node, dest_node)
+            edge = MercuryEdge(source_node, dest_node)
             self.application.dag.add_edge(edge)
 
         source_dest_map = {

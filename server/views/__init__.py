@@ -6,7 +6,7 @@ import json
 logger = logging.getLogger(__name__)
 
 
-class CaduceusHandler(tornado.web.RequestHandler):
+class MercuryHandler(tornado.web.RequestHandler):
     def prepare(self):
         if self.request.method in ["POST", "PATCH"]:
             assert (
@@ -26,4 +26,4 @@ class CaduceusHandler(tornado.web.RequestHandler):
             assert self.request.headers.get("Accept") == "application/vnd.api+json"
 
     def get(self):
-        self.write("Welcome to Caduceus")
+        self.write("Welcome to Mercury")

@@ -1,13 +1,13 @@
 import logging
 
-from server.views import CaduceusHandler
+from server.views import MercuryHandler
 from server.views.node import NodeHandler
 from server.views.connector import ConnectorHandler
 
 logger = logging.getLogger(__name__)
 
 
-class WorkflowHandler(CaduceusHandler):
+class WorkflowHandler(MercuryHandler):
     json_type = "workflows"
 
     def get(self):

@@ -2,14 +2,14 @@ import logging
 from typing import Tuple
 from uuid import uuid4
 
-from caduceus.node import MercuriNode
+from mercury.node import MercuryNode
 
 
-class MercuriEdge:
+class MercuryEdge:
     def __init__(
         self,
-        source_node: MercuriNode = None,
-        dest_node: MercuriNode = None,
+        source_node: MercuryNode = None,
+        dest_node: MercuryNode = None,
         source_dest_connect: list = None,
     ):
 
@@ -24,19 +24,19 @@ class MercuriEdge:
         )
 
     @property
-    def source_node(self) -> MercuriNode:
+    def source_node(self) -> MercuryNode:
         return self._source_node
 
     @source_node.setter
-    def source_node(self, node: MercuriNode):
+    def source_node(self, node: MercuryNode):
         self._source_node = node
 
     @property
-    def dest_node(self) -> MercuriNode:
+    def dest_node(self) -> MercuryNode:
         return self._dest_node
 
     @dest_node.setter
-    def dest_node(self, node: MercuriNode):
+    def dest_node(self, node: MercuryNode):
         self._dest_node = node
 
     @property

@@ -1,9 +1,9 @@
 import json
 import logging
 
-from caduceus.node import MercuriNode
+from mercury.node import MercuryNode
 
-from server.views import CaduceusHandler
+from server.views import MercuryHandler
 from server.views.utils import get_node_attrs
 
 logger = logging.getLogger(__name__)
@@ -11,7 +11,7 @@ logger = logging.getLogger(__name__)
 JUPYTER_PORT = "8888"
 
 
-class NodeHandler(CaduceusHandler):
+class NodeHandler(MercuryHandler):
     # decorator to wrap and create a json api response, wrap in data, attributes, types
     json_type = "nodes"
 
@@ -79,7 +79,7 @@ class NodeHandler(CaduceusHandler):
                                 NoSchema
         """
         data = json.loads(self.request.body)
-        node = MercuriNode(**data.get("attributes", {}))
+        node = MercuryNode(**data.get("attributes", {}))
 
         # add the node to the dag first, as this sets the jupyter port
         self.application.dag.add_node(node)
@@ -160,7 +160,7 @@ class NodeHandler(CaduceusHandler):
                                 NoSchema
         """
         node = self.application.dag.get_node(node_id)
-        node.caduceus_container.container.kill()
+        node.mercury_container.container.kill()
         self.application.dag.remove_node(node)
 
         self.set_status(204)
@@ -169,7 +169,7 @@ class NodeHandler(CaduceusHandler):
         # self.write({"response": [node_props]})
 
 
-class NodeContainerHandler(CaduceusHandler):
+class NodeContainerHandler(MercuryHandler):
     def post(self, node_id):
         print("triggered put", node_id)
         data = json.loads(self.request.body)
@@ -188,8 +188,8 @@ class NodeContainerHandler(CaduceusHandler):
         response = {
             "id": node.id,
             "container": {
-                "container_id": node.caduceus_container.container_id,
-                "container_state": node.caduceus_container.container_state,
+                "container_id": node.mercury_container.container_id,
+                "container_state": node.mercury_container.container_state,
             },
             "docker_img_name": node.docker_img_name,
             "docker_img_tag": node.docker_img_tag,

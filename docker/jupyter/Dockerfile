@@ -9,7 +9,7 @@ USER root
 RUN apt-get update && apt-get install -yq --no-install-recommends \
     vim
 
-# allow mercuri which runs on port 5000 to embed jupyter notebook
+# allow mercury which runs on port 5000 to embed jupyter notebook
 RUN echo 'c.NotebookApp.tornado_settings = { \
     "headers": { \
     "Content-Security-Policy": "frame-ancestors 'self' http://localhost:5000", \
@@ -17,7 +17,7 @@ RUN echo 'c.NotebookApp.tornado_settings = { \
     } \
     }' >> /home/jovyan/.jupyter/jupyter_notebook_config.py
 
-# create an empty untitled.ipynb 
+# create an empty untitled.ipynb
 RUN mkdir work/scripts/
 COPY create_notebook.py ./create_notebook.py
 RUN python3 create_notebook.py work/scripts/Untitled.ipynb

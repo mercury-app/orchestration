@@ -4,7 +4,7 @@ import logging
 logger = logging.getLogger(__name__)
 
 
-class CaduceusContainer:
+class MercuryContainer:
     def __init__(self, container: docker.models.containers.Container):
         self._container: docker.models.containers.Container = container
         self._container_id: str = container.id

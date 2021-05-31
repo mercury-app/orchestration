@@ -1,4 +1,7 @@
-# Caduceus
+# Mercury Orchestration
+
+This repository contains all the code for the service that orchestrates the
+execution of workflows and underlying notebooks.
 
 ### Usage
 
@@ -6,28 +9,29 @@
 
 Install poetry - https://python-poetry.org/docs/basic-usage/
 
-```
-cd caduceus
+```sh
+cd orchestration
 poetry install
 poetry shell
 ```
 
 #### Start the server
-```
+
+```sh
 python3 -m server.app
 ```
 
 Go to localhost:8888
 
-### Contributing 
+### Contributing
 
 If you install a new dependency or update an existing dependency, commit the `poetry.lock` file as well.
 
-### Build the caduceus docker image for mercuri
+### Build the docker image for Mercury
 
-```
+```sh
 cd docker/jupyter
-docker build . -t jupyter-caduceus:latest
+docker build . -t jupyter-mercury:latest
 ```
 
 ### API documentation
@@ -39,39 +43,39 @@ https://documenter.getpostman.com/view/2281095/TzK16F5A
 
 ### Triggering nodes
 
-```
-from caduceus.node import MercuriNode
-nodeA = MercuriNode(input = {"ai_1":"ai_1", "ai_2":"ai_2"}, output = {}, docker_volume="/usr/src/app", docker_img_name="nodea")
+```python
+from orchestration.node import MercuryNode
+nodeA = MercuryNode(input = {"ai_1":"ai_1", "ai_2":"ai_2"}, output = {}, docker_volume="/usr/src/app", docker_img_name="nodea")
 nodeA.trigger()
 
-nodeB = MercuriNode(input = {"bi_1":"ao_1", "bi_2":"bi_2"}, output = {}, docker_volume="/usr/src/app", docker_img_name="nodeb")
+nodeB = MercuryNode(input = {"bi_1":"ao_1", "bi_2":"bi_2"}, output = {}, docker_volume="/usr/src/app", docker_img_name="nodeb")
 nodeB.trigger()
 
-nodeC = MercuriNode(input = {"ci_1":"ao_1", "ci_2":"ci_2"}, output = {}, docker_volume="/usr/src/app", docker_img_name="nodec")
+nodeC = MercuryNode(input = {"ci_1":"ao_1", "ci_2":"ci_2"}, output = {}, docker_volume="/usr/src/app", docker_img_name="nodec")
 nodeC.trigger()
 
-nodeD = MercuriNode(input = {"di_1":"bo_1", "di_2":"co_1"}, output = {}, docker_volume="/usr/src/app", docker_img_name="noded")
+nodeD = MercuryNode(input = {"di_1":"bo_1", "di_2":"co_1"}, output = {}, docker_volume="/usr/src/app", docker_img_name="noded")
 nodeD.trigger()
 ```
 
-```
-from caduceus.dag import MercuriDag
-mercuri_dag = MercuriDag()
+```python
+from orchestration.dag import MercuryDag
+mercury_dag = MercuryDag()
 
 # add two nodes and define the edge between them
-mercuri_dag.add_node(nodeA)
-mercuri_dag.add_node(nodeB)
+mercury_dag.add_node(nodeA)
+mercury_dag.add_node(nodeB)
 
-mercuri_dag.add_edge(nodeA, nodeB)
+mercury_dag.add_edge(nodeA, nodeB)
 
 
-mercuri_dag.add_node(nodeC)
-mercuri_dag.add_edge(nodeA, nodeC)
+mercury_dag.add_node(nodeC)
+mercury_dag.add_edge(nodeA, nodeC)
 
-mercuri_dag.add_node(nodeD)
-mercuri_dag.add_edge(nodeB, nodeD)
-mercuri_dag.add_edge(nodeC, nodeD)
+mercury_dag.add_node(nodeD)
+mercury_dag.add_edge(nodeB, nodeD)
+mercury_dag.add_edge(nodeC, nodeD)
 
-mercuri_dag.nx_dag.nodes
-mercuri_dag.nx_dag.edges
+mercury_dag.nx_dag.nodes
+mercury_dag.nx_dag.edges
 ```

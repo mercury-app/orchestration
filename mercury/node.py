@@ -3,19 +3,19 @@ from uuid import uuid4
 import copy
 
 
-from caduceus.docker_client import docker_cl
-from caduceus.constants import (
+from mercury.docker_client import docker_cl
+from mercury.constants import (
     DEFAULT_DOCKER_VOL_MODE,
     DOCKER_COMMON_VOLUME,
     BASE_DOCKER_IMAGE_NAME,
     BASE_DOCKER_BIND_VOLUME,
 )
-from caduceus.container import CaduceusContainer
+from mercury.container import MercuryContainer
 
 logger = logging.getLogger(__name__)
 
 
-class MercuriNode:
+class MercuryNode:
     def __init__(
         self,
         input: list = None,
@@ -32,15 +32,15 @@ class MercuriNode:
         self._docker_img_tag = "0"
 
         # Here, the container is itself changing on every execution
-        self._caduceus_container: CaduceusContainer = None
+        self._mercury_container: MercuryContainer = None
         self._jupyter_port: int = 8880
 
     def __str__(self) -> str:
         return self.id
 
     @property
-    def caduceus_container(self) -> CaduceusContainer:
-        return self._caduceus_container
+    def mercury_container(self) -> MercuryContainer:
+        return self._mercury_container
 
     @property
     def input(self) -> list:
@@ -99,12 +99,12 @@ class MercuriNode:
             detach=True,
             ports={"8888/tcp": self._jupyter_port},
         )
-        self._caduceus_container = CaduceusContainer(container_run)
-        logger.info(f"Initialised container {self._caduceus_container.container_id}")
+        self._mercury_container = MercuryContainer(container_run)
+        logger.info(f"Initialised container {self._mercury_container.container_id}")
 
     def commit(self) -> str:
         self._docker_img_tag = str(int(self._docker_img_tag) + 1)
-        self._caduceus_container.commit(
+        self._mercury_container.commit(
             build_img_name=self._docker_img_name, build_img_tag=self._docker_img_tag
         )
 
@@ -123,22 +123,22 @@ class MercuriNode:
             [description]
         """
         logger.info("Running container")
-        if self._caduceus_container:
-            if self._caduceus_container.container_state["Running"]:
+        if self._mercury_container:
+            if self._mercury_container.container_state["Running"]:
                 logger.info(
-                    f"Running in container {self._caduceus_container.container_id}"
+                    f"Running in container {self._mercury_container.container_id}"
                 )
-                exit_code, output = self._caduceus_container.container.exec_run(
+                exit_code, output = self._mercury_container.container.exec_run(
                     "echo 'dasdasds'"
                 )
                 return exit_code, output
 
         else:
             self.initialise_container()
-            exit_code, output = self._caduceus_container.container.exec_run(
+            exit_code, output = self._mercury_container.container.exec_run(
                 "echo 'dasdasds'"
             )
             logging.info(
-                f"Running in container {self._caduceus_container.container_id}"
+                f"Running in container {self._mercury_container.container_id}"
             )
             return exit_code, output

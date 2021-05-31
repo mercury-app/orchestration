@@ -5,26 +5,26 @@ from uuid import uuid4
 
 from networkx.algorithms.dag import ancestors, descendants
 
-from caduceus.node import MercuriNode
-from caduceus.edge import MercuriEdge
+from mercury.node import MercuryNode
+from mercury.edge import MercuryEdge
 
 logger = logging.getLogger(__name__)
 
 
-class MercuriDag:
+class MercuryDag:
     def __init__(self):
         self.id = uuid4().hex
         self._nxdag = nx.DiGraph()
 
     @property
-    def nodes(self) -> List[MercuriNode]:
+    def nodes(self) -> List[MercuryNode]:
         return list(self._nxdag.nodes)
 
     @property
     def edges(self) -> list:
         return [_[2]["object"] for _ in self._nxdag.edges(data=True)]
 
-    def add_node(self, node: MercuriNode) -> None:
+    def add_node(self, node: MercuryNode) -> None:
 
         if len(self._nxdag.nodes) > 0:
             used_ports = [_.jupyter_port for _ in self._nxdag.nodes]
@@ -34,28 +34,28 @@ class MercuriDag:
             node.jupyter_port = port
         self._nxdag.add_node(node, id=node.id)
 
-    def remove_node(self, node: MercuriNode) -> None:
+    def remove_node(self, node: MercuryNode) -> None:
         self._nxdag.remove_node(node)
 
-    def add_edge(self, edge: MercuriEdge) -> None:
+    def add_edge(self, edge: MercuryEdge) -> None:
         # not the most elegant, to do: change
         assert edge.source_node
         assert edge.dest_node
 
         self._nxdag.add_edge(edge.source_node, edge.dest_node, object=edge)
 
-    def remove_edge(self, edge: MercuriEdge) -> None:
+    def remove_edge(self, edge: MercuryEdge) -> None:
         assert edge.source_node
         assert edge.dest_node
         self._nxdag.remove_edge(edge.source_node, edge.dest_node)
 
-    def get_node(self, id: str) -> MercuriNode:
+    def get_node(self, id: str) -> MercuryNode:
         node_search = [_ for _ in self._nxdag.nodes if _.id == id]
         assert len(node_search) < 2
         if len(node_search) == 1:
             return node_search[0]
 
-    def get_edge(self, id: str) -> MercuriEdge:
+    def get_edge(self, id: str) -> MercuryEdge:
         edge_search = [_ for _ in self.edges if _.id == id]
         assert len(edge_search) < 2
         if len(edge_search) == 1:
@@ -63,7 +63,7 @@ class MercuriDag:
 
     def get_edge_from_nodes(
         self, source_node_id: str, detination_node_id: str
-    ) -> MercuriEdge:
+    ) -> MercuryEdge:
         edge_search = [
             _
             for _ in self.edges
@@ -74,7 +74,7 @@ class MercuriDag:
         if len(edge_search) == 1:
             return edge_search[0]
 
-    def get_valid_connections_for_nodes(self) -> Dict[MercuriNode, List[MercuriNode]]:
+    def get_valid_connections_for_nodes(self) -> Dict[MercuryNode, List[MercuryNode]]:
         all_nodes = set(self._nxdag.nodes)
         valid_edges_per_nodes = {}
         for node in self._nxdag.nodes:
