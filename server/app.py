@@ -35,7 +35,7 @@ if __name__ == "__main__":
     [
         _.kill()
         for _ in docker_cl.containers.list()
-        if _.image.tags[0] == "jupyter-mercury:latest"
+        if "jupyter-mercury:latest" in _.image.tags
     ]
 
     app = Application()
