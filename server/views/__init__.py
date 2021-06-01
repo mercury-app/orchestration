@@ -19,8 +19,8 @@ class MercuryHandler(tornado.web.RequestHandler):
             assert isinstance(data["data"], dict)
             assert "type" in data["data"]
 
-            if self.request == "PATCH":
-                assert "id" in data.keys()
+            if self.request.method == "PATCH":
+                assert "id" in data["data"].keys()
 
         elif self.request.method in ["GET"]:
             assert self.request.headers.get("Accept") == "application/vnd.api+json"

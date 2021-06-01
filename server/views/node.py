@@ -169,11 +169,14 @@ class NodeHandler(MercuryHandler):
         # self.write({"response": [node_props]})
 
 
-class NodeContainerHandler(MercuryHandler):
-    def post(self, node_id):
-        print("triggered put", node_id)
+class NodeImageHandler(CaduceusHandler):
+    json_type = "nodes"
+
+    def patch(self, node_id):
         data = json.loads(self.request.body)
         node = self.application.dag.get_node(node_id)
+
+        assert data["data"].get("type") == "nodes"
 
         assert "attributes" in data["data"]
         assert "state" in data["data"].get("attributes")
