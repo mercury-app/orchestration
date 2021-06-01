@@ -177,7 +177,7 @@ class NodeImageHandler(CaduceusHandler):
         node = self.application.dag.get_node(node_id)
 
         assert data["data"].get("type") == "nodes"
-
+        assert data["data"].get("id") == node_id
         assert "attributes" in data["data"]
         assert "state" in data["data"].get("attributes")
 
