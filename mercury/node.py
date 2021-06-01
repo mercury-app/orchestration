@@ -123,22 +123,13 @@ class MercuryNode:
             [description]
         """
         logger.info("Running container")
-        if self._mercury_container:
-            if self._mercury_container.container_state["Running"]:
-                logger.info(
-                    f"Running in container {self._mercury_container.container_id}"
-                )
-                exit_code, output = self._mercury_container.container.exec_run(
-                    "echo 'dasdasds'"
-                )
-                return exit_code, output
 
-        else:
+        if not self._caduceus_container:
             self.initialise_container()
-            exit_code, output = self._mercury_container.container.exec_run(
-                "echo 'dasdasds'"
-            )
-            logging.info(
-                f"Running in container {self._mercury_container.container_id}"
-            )
-            return exit_code, output
+        assert self._caduceus_container.container_state["Running"]
+
+        logger.info(f"Running in container {self._caduceus_container.container_id}")
+        exit_code, output = self._caduceus_container.container.exec_run(
+            "echo 'dasdasds'"
+        )
+        return exit_code, output

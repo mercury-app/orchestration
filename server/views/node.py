@@ -175,24 +175,21 @@ class NodeContainerHandler(MercuryHandler):
         data = json.loads(self.request.body)
         node = self.application.dag.get_node(node_id)
 
-        container_cmd = data.get("status", None)
+        assert "attributes" in data["data"]
+        assert "state" in data["data"].get("attributes")
 
-        if container_cmd == "run":
-            exit_code, output = node.run()
-            logger.info(f"Exit code: {exit_code}")
-            logger.info(f"Output: {output}")
+        change_state = data["data"]["attributes"]["state"]
+        assert change_state in ["build"]
 
-        if container_cmd == "commit":
+        if change_state == "build":
             node.commit()
 
-        response = {
+        data = {
             "id": node.id,
-            "container": {
-                "container_id": node.mercury_container.container_id,
-                "container_state": node.mercury_container.container_state,
-            },
-            "docker_img_name": node.docker_img_name,
-            "docker_img_tag": node.docker_img_tag,
+            "type": self.json_type,
+            "attributes": get_node_attrs(node),
         }
 
-        self.write({"response": response})
+        self.set_status(200)
+        self.write({"data": data})
+        self.set_header("Content-Type", "application/vnd.api+json")

@@ -7,7 +7,7 @@ from mercury.docker_client import docker_cl
 
 from server.views import MercuryHandler
 from server.views.workflow import WorkflowHandler
-from server.views.node import NodeHandler, NodeContainerHandler
+from server.views.node import NodeHandler, NodeImageHandler
 from server.views.connector import ConnectorHandler
 
 logging.basicConfig(level=logging.INFO)
@@ -21,7 +21,7 @@ class Application(tornado.web.Application):
         self.dag = MercuryDag()
         self.handlers = [
             (r"/", MercuryHandler),
-            (r"/nodes/([^/\s]+)/status", NodeContainerHandler),
+            (r"/nodes/([^/\s]+)/image", NodeImageHandler),
             (r"/nodes(?:/([^/\s]+))?", NodeHandler),
             (r"/connectors(?:/([^/\s]+))?", ConnectorHandler),
             (r"/workflows", WorkflowHandler),
