@@ -12,8 +12,8 @@ def get_node_attrs(node: MercuryNode) -> dict:
             "state": None,
         },
         "container_attributes": {
-            "id": node.caduceus_container.container_id,
-            "state": node.caduceus_container.container_state["Status"],
+            "id": node.mercury_container.container_id,
+            "state": node.mercury_container.container_state["Status"],
         },
         "notebook_attributes": {
             "url": f"http://localhost:{node.jupyter_port}/notebooks/work/scripts/Untitled.ipynb?kernel_name=python3",

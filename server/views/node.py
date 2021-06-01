@@ -169,7 +169,7 @@ class NodeHandler(MercuryHandler):
         # self.write({"response": [node_props]})
 
 
-class NodeImageHandler(CaduceusHandler):
+class NodeImageHandler(MercuryHandler):
     json_type = "nodes"
 
     def patch(self, node_id):
