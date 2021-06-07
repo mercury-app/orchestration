@@ -133,3 +133,6 @@ class MercuryNode:
             "echo 'dasdasds'"
         )
         return exit_code, output
+
+    def execute_code(self, code) -> tuple:
+        return self._mercury_container.execute_code(code)

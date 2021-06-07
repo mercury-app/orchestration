@@ -1,5 +1,6 @@
 import docker
 import logging
+import jupyter_client
 
 logger = logging.getLogger(__name__)
 
@@ -50,3 +51,17 @@ class MercuryContainer:
 
         assert self.container_state["Running"]
         self._container.commit(repository=build_img_name, tag=build_img_tag)
+
+    def execute_code(self, code) -> tuple:
+        logger.info("Executing code in docker container")
+        logger.info(code)
+
+        cmd = f"python3 -m container.cli execute-code --code '{code}'"
+        logger.info(f"Docker exec command: {cmd}")
+        exit_code, container_output = self._container.exec_run(cmd)
+
+        if exit_code != 0:
+            logger.warning("code did not run successfully in kernel")
+            print(container_output)
+
+        return exit_code, container_output
