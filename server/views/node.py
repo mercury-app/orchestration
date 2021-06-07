@@ -4,7 +4,7 @@ import logging
 from mercury.node import MercuryNode
 
 from server.views import MercuryHandler
-from server.views.utils import get_node_attrs
+from server.views.utils import get_node_attrs, get_node_input_code_snippet
 
 logger = logging.getLogger(__name__)
 
@@ -43,10 +43,22 @@ class NodeHandler(MercuryHandler):
         else:
             nodes = self.application.dag.nodes
 
-        data = [
-            {"id": _.id, "type": self.json_type, "attributes": get_node_attrs(_)}
-            for _ in nodes
-        ]
+        data = []
+
+        for node in nodes:
+            node_response = {
+                "id": node.id,
+                "type": self.json_type,
+                "attributes": get_node_attrs(node),
+            }
+
+            edges = self.application.dag.get_node_edges(node.id)
+            code = get_node_input_code_snippet(node, edges)
+
+            node_response["attributes"]["notebook_attributes"]["io"][
+                "input_code"
+            ] = code
+            data.append(node_response)
 
         self.set_status(200)
         self.write({"data": data[0] if node_id else data})
@@ -131,6 +143,10 @@ class NodeHandler(MercuryHandler):
             "attributes": get_node_attrs(node),
         }
 
+        edges = self.application.dag.get_node_edges(node.id)
+        code = get_node_input_code_snippet(node, edges)
+        data["attributes"]["notebook_attributes"]["io"]["input_code"] = code
+
         self.set_status(200)
         self.write({"data": data})
         self.set_header("Content-Type", "application/vnd.api+json")
@@ -192,6 +208,51 @@ class NodeImageHandler(MercuryHandler):
             "type": self.json_type,
             "attributes": get_node_attrs(node),
         }
+
+        edges = self.application.dag.get_node_edges(node.id)
+        code = get_node_input_code_snippet(node, edges)
+        data["attributes"]["notebook_attributes"]["io"]["input_code"] = code
+
+        self.set_status(200)
+        self.write({"data": data})
+        self.set_header("Content-Type", "application/vnd.api+json")
+
+
+class NodeNotebookHandler(MercuryHandler):
+    json_type = "nodes"
+
+    def patch(self, node_id):
+        data = json.loads(self.request.body)
+        node = self.application.dag.get_node(node_id)
+
+        assert data["data"].get("type") == "nodes"
+        assert data["data"].get("id") == node_id
+        assert "attributes" in data["data"]
+        assert "state" in data["data"].get("attributes")
+
+        change_state = data["data"]["attributes"]["state"]
+        assert change_state in ["run"]
+
+        assert "code" in data["data"].get("attributes")
+        code = data["data"]["attributes"]["code"]
+
+        if change_state == "run":
+            exit_code, container_output = node.execute_code(code)
+
+        data = {
+            "id": node.id,
+            "type": self.json_type,
+            "attributes": get_node_attrs(node),
+        }
+
+        data["attributes"]["notebook_attributes"]["container_log"] = json.dumps(
+            container_output.decode("utf-8")
+        )
+        data["attributes"]["notebook_attributes"]["exit_code"] = exit_code
+
+        edges = self.application.dag.get_node_edges(node.id)
+        code = get_node_input_code_snippet(node, edges)
+        data["attributes"]["notebook_attributes"]["io"]["input_code"] = code
 
         self.set_status(200)
         self.write({"data": data})
