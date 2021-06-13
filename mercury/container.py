@@ -1,6 +1,5 @@
 import docker
 import logging
-import jupyter_client
 
 logger = logging.getLogger(__name__)
 
@@ -58,6 +57,21 @@ class MercuryContainer:
 
         cmd = f"python3 -m container.cli execute-code --code '{code}'"
         logger.info(f"Docker exec command: {cmd}")
+        exit_code, container_output = self._container.exec_run(cmd)
+
+        if exit_code != 0:
+            logger.warning("code did not run successfully in kernel")
+            print(container_output)
+
+        return exit_code, container_output
+
+    def write_variables_to_json(self, variables, json_fp) -> tuple:
+        logger.info("Writing variables from docker environment")
+
+        variable_list = "|".join(variables)
+        cmd = f"python3 -m container.cli write-kernel-variables-to-json --variables '{variable_list}'  --json '{json_fp}'"
+        logger.info(f"Docker exec command: {cmd}")
+
         exit_code, container_output = self._container.exec_run(cmd)
 
         if exit_code != 0:
