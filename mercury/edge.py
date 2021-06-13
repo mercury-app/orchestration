@@ -6,6 +6,8 @@ import os
 from mercury.node import MercuryNode
 from mercury.constants import BASE_DOCKER_BIND_VOLUME
 
+logger = logging.getLogger(__name__)
+
 
 class MercuryEdge:
     def __init__(
@@ -19,11 +21,12 @@ class MercuryEdge:
         self._source_node = source_node
         self._dest_node = dest_node
         self._json_path = f"{BASE_DOCKER_BIND_VOLUME}/{self.id}.json"
+        self._json_inputs = None
 
-        with open(self._json_path) as f:
-            io = json.load(f)
-
-        self._json_inputs = io.keys().tolist()
+        if os.path.exists(self._json_path):
+            with open(self._json_path) as f:
+                io = json.load(f)
+            self._json_inputs = io.keys().tolist()
 
         # the connections between source output set and destination input set have to
         # be one-one (injective) but not necessarily onto(surjective)
@@ -55,9 +58,14 @@ class MercuryEdge:
     def json_inputs(self) -> list:
         return self._json_inputs
 
+    @property
+    def json_path(self) -> str:
+        return self._json_path
+
     def get_input_code_snippet(self) -> str:
         if not os.path.exists(self._json_path):
-            raise Exception(f"json for edge {self.id} doesn't exist")
+            logger.warning(f"json for edge {self.id} doesn't exist")
+            return None
 
         with open(self._json_path) as f:
             io = json.load(f)
@@ -69,4 +77,15 @@ class MercuryEdge:
             code_lines.append(code_line)
 
         code = "\n".join(code_lines)
+        return code
+
+    def get_output_code_snippet(self) -> str:
+        code = "{\n"
+
+        for source_dest_map in self.source_dest_connect:
+            # check type from within the kernel here?
+            output_name = source_dest_map["source"]["output"]
+            code += f"'{output_name}' : {output_name}"
+
+        code += "\n}"
         return code
