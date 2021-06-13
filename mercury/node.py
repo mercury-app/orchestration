@@ -136,3 +136,6 @@ class MercuryNode:
 
     def execute_code(self, code) -> tuple:
         return self._mercury_container.execute_code(code)
+
+    def write_output_to_json(self, variables: list, json_fp: str) -> tuple:
+        return self._mercury_container.write_variables_to_json(variables, json_fp)

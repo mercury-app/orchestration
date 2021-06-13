@@ -4,7 +4,11 @@ import logging
 from mercury.node import MercuryNode
 
 from server.views import MercuryHandler
-from server.views.utils import get_node_attrs, get_node_input_code_snippet
+from server.views.utils import (
+    get_node_attrs,
+    get_node_input_code_snippet,
+    get_node_output_code_snippet,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -53,11 +57,15 @@ class NodeHandler(MercuryHandler):
             }
 
             edges = self.application.dag.get_node_edges(node.id)
-            code = get_node_input_code_snippet(node, edges)
+            input_code = get_node_input_code_snippet(node, edges)
+            output_code = get_node_output_code_snippet(node, edges)
 
             node_response["attributes"]["notebook_attributes"]["io"][
                 "input_code"
-            ] = code
+            ] = input_code
+            node_response["attributes"]["notebook_attributes"]["io"][
+                "output_code"
+            ] = output_code
             data.append(node_response)
 
         self.set_status(200)
@@ -144,8 +152,10 @@ class NodeHandler(MercuryHandler):
         }
 
         edges = self.application.dag.get_node_edges(node.id)
-        code = get_node_input_code_snippet(node, edges)
-        data["attributes"]["notebook_attributes"]["io"]["input_code"] = code
+        input_code = get_node_input_code_snippet(node, edges)
+        output_code = get_node_output_code_snippet(node, edges)
+        data["attributes"]["notebook_attributes"]["io"]["input_code"] = input_code
+        data["attributes"]["notebook_attributes"]["io"]["output_code"] = output_code
 
         self.set_status(200)
         self.write({"data": data})
@@ -231,13 +241,27 @@ class NodeNotebookHandler(MercuryHandler):
         assert "state" in data["data"].get("attributes")
 
         change_state = data["data"]["attributes"]["state"]
-        assert change_state in ["run"]
+        assert change_state in ["run", "write_json"]
 
-        assert "code" in data["data"].get("attributes")
-        code = data["data"]["attributes"]["code"]
+        if change_state == "run":
+            assert "code" in data["data"].get("attributes")
+            code = data["data"]["attributes"]["code"]
 
         if change_state == "run":
             exit_code, container_output = node.execute_code(code)
+
+        if change_state == "write_json":
+            edges = self.application.dag.get_node_edges(node.id)
+            if not edges:
+                logger.warning("This node does not have any edges")
+                container_output = "".encode()
+                exit_code = -1
+            for edge in edges:
+                variables = [_["source"]["output"] for _ in edge.source_dest_connect]
+                logger.info(f"writing for edge {edge.id}")
+                exit_code, container_output = node.write_output_to_json(
+                    variables, edge.json_path
+                )
 
         data = {
             "id": node.id,
@@ -251,8 +275,10 @@ class NodeNotebookHandler(MercuryHandler):
         data["attributes"]["notebook_attributes"]["exit_code"] = exit_code
 
         edges = self.application.dag.get_node_edges(node.id)
-        code = get_node_input_code_snippet(node, edges)
-        data["attributes"]["notebook_attributes"]["io"]["input_code"] = code
+        input_code = get_node_input_code_snippet(node, edges)
+        output_code = get_node_output_code_snippet(node, edges)
+        data["attributes"]["notebook_attributes"]["io"]["input_code"] = input_code
+        data["attributes"]["notebook_attributes"]["io"]["output_code"] = output_code
 
         self.set_status(200)
         self.write({"data": data})
