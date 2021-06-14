@@ -3,7 +3,7 @@ import logging
 from typing import List, Dict
 from uuid import uuid4
 
-from networkx.algorithms.dag import ancestors, descendants
+from networkx.algorithms.dag import ancestors
 
 from mercury.node import MercuryNode
 from mercury.edge import MercuryEdge
@@ -78,16 +78,11 @@ class MercuryDag:
         all_nodes = set(self._nxdag.nodes)
         valid_edges_per_nodes = {}
         for node in self._nxdag.nodes:
-            ancestors_of_node = ancestors(self._nxdag, node)
-            descendants_of_node = descendants(self._nxdag, node)
-            reachable_nodes = set()
-            reachable_nodes.add(node)
-            reachable_nodes = reachable_nodes.union(ancestors_of_node).union(
-                descendants_of_node
-            )
-            unreachable_nodes = all_nodes.difference(reachable_nodes)
+            impossible_descendants = ancestors(self._nxdag, node)
+            impossible_descendants.add(node)
+            possible_descendants = all_nodes.difference(impossible_descendants)
             valid_edges_per_nodes[node] = (
-                list(unreachable_nodes) if unreachable_nodes is not None else []
+                list(possible_descendants) if possible_descendants is not None else []
             )
 
         return valid_edges_per_nodes
