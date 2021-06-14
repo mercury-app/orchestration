@@ -10,9 +10,12 @@ def get_node_input_code_snippet(node: MercuryNode, edges: List[MercuryEdge]) -> 
     code_lines = []
     inputs_available_in_json = []
     for edge in edges:
+        if edge.dest_node != node:
+            continue
         snippet = edge.get_input_code_snippet()
         if not snippet:
             continue
+
         inputs_available_in_json += edge.json_inputs
         snippet += f"\nfrom source node {edge.source_node.id}\n"
         code_lines.append(snippet)
@@ -33,6 +36,8 @@ def get_node_input_code_snippet(node: MercuryNode, edges: List[MercuryEdge]) -> 
 def get_node_output_code_snippet(node: MercuryNode, edges: List[MercuryEdge]) -> str:
     code_lines = []
     for edge in edges:
+        if edge.source_node != node:
+            continue
         snippet = edge.get_output_code_snippet()
         snippet += f"\nfor destination node {edge.dest_node.id}\n"
         code_lines.append(snippet)

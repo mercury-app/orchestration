@@ -257,6 +257,8 @@ class NodeNotebookHandler(MercuryHandler):
                 container_output = "".encode()
                 exit_code = -1
             for edge in edges:
+                if edge.source_node != node:
+                    continue
                 variables = [_["source"]["output"] for _ in edge.source_dest_connect]
                 logger.info(f"writing for edge {edge.id}")
                 exit_code, container_output = node.write_output_to_json(
