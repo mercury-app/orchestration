@@ -1,8 +1,14 @@
 from typing import List
+import logging
 
 from mercury.node import MercuryNode
 from mercury.edge import MercuryEdge
 from mercury.dag import MercuryDag
+
+logger = logging.getLogger(__name__)
+
+OUTPUT_CODE_SNIPPET_HEADER = "# Mercury-Output\n"
+INPUT_CODE_SNIPPET_HEADER = "# Mercury-Input\n"
 
 
 def get_node_input_code_snippet(node: MercuryNode, edges: List[MercuryEdge]) -> str:
@@ -16,11 +22,10 @@ def get_node_input_code_snippet(node: MercuryNode, edges: List[MercuryEdge]) -> 
         if not snippet:
             continue
 
+        snippet += f"\n#from source node {edge.source_node.id}\n"
         inputs_available_in_json += edge.json_inputs
-        snippet += f"\nfrom source node {edge.source_node.id}\n"
         code_lines.append(snippet)
 
-    code_lines = []
     if node.input:
         for input_name in node.input:
             # to do: check kernel type running in container
@@ -28,8 +33,8 @@ def get_node_input_code_snippet(node: MercuryNode, edges: List[MercuryEdge]) -> 
                 snippet = f"{input_name} = None\n"
                 code_lines.append(snippet)
 
-    code = "\n".join(code_lines)
-    code = "# Mercury-Input\n" + code
+    code = "".join(code_lines)
+    code = INPUT_CODE_SNIPPET_HEADER + code
     return code
 
 
@@ -38,12 +43,15 @@ def get_node_output_code_snippet(node: MercuryNode, edges: List[MercuryEdge]) ->
     for edge in edges:
         if edge.source_node != node:
             continue
+        snippet += f"\n# for destination node {edge.dest_node.id}\n"
         snippet = edge.get_output_code_snippet()
-        snippet += f"\nfor destination node {edge.dest_node.id}\n"
         code_lines.append(snippet)
 
-    code = "\n".join(code_lines)
-    code = "# Mercury-Output\n" + code
+    if len(code_lines) == 0:
+        code_lines.append("# Create a connector for this node to export outputs")
+
+    code = "".join(code_lines)
+    code = OUTPUT_CODE_SNIPPET_HEADER + code
     return code
 
 
