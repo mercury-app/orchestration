@@ -96,5 +96,5 @@ class MercuryEdge:
             dest_input_name = source_dest_map["destination"]["input"]
             code += f"'{dest_input_name}' : {source_output_name}, \n"
 
-        code += "\n}"
+        code += "}"
         return code
