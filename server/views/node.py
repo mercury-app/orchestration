@@ -57,6 +57,7 @@ class NodeHandler(MercuryHandler):
             }
 
             edges = self.application.dag.get_node_edges(node.id)
+            logger.info(f"edges for this node: {len(edges)}")
             input_code = get_node_input_code_snippet(node, edges)
             output_code = get_node_output_code_snippet(node, edges)
 
@@ -246,23 +247,30 @@ class NodeNotebookHandler(MercuryHandler):
         if change_state == "run":
             assert "code" in data["data"].get("attributes")
             code = data["data"]["attributes"]["code"]
-
-        if change_state == "run":
             exit_code, container_output = node.execute_code(code)
 
         if change_state == "write_json":
             edges = self.application.dag.get_node_edges(node.id)
+            container_output = "".encode()
+            exit_code = -1
             if not edges:
                 logger.warning("This node does not have any edges")
-                container_output = "".encode()
-                exit_code = -1
             for edge in edges:
                 if edge.source_node != node:
                     continue
-                variables = [_["source"]["output"] for _ in edge.source_dest_connect]
+                # variables that have to be written as keys in json
+                dest_inputs = [
+                    _["destination"]["input"] for _ in edge.source_dest_connect
+                ]
+                # variables for which we need to get values from within the kernel
+                source_outputs = [
+                    _["source"]["output"] for _ in edge.source_dest_connect
+                ]
                 logger.info(f"writing for edge {edge.id}")
                 exit_code, container_output = node.write_output_to_json(
-                    variables, edge.json_path
+                    source_outputs,
+                    dest_inputs,
+                    edge.json_path_container,
                 )
 
         data = {
