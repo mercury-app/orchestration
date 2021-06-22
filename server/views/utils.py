@@ -72,6 +72,7 @@ def get_node_attrs(node: MercuryNode) -> dict:
             "state": None,
             "exit_code": -1,
             "container_log": None,
+            "kernel_status": node.mercury_container.kernel_state,
             "io": {"input_code": None, "output_code": None},
         },
     }
