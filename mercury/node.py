@@ -89,7 +89,7 @@ class MercuryNode:
         """
         container_run = docker_cl.containers.run(
             BASE_DOCKER_IMAGE_NAME,
-            environment=self._input,
+            environment={"MERCURY_NODE": self.id},
             volumes={
                 DOCKER_COMMON_VOLUME: {
                     "bind": BASE_DOCKER_BIND_VOLUME,
