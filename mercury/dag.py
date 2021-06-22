@@ -86,3 +86,11 @@ class MercuryDag:
             )
 
         return valid_edges_per_nodes
+
+    def get_node_edges(self, node_id: str) -> List[MercuryEdge]:
+        edge_search = [
+            _
+            for _ in self.edges
+            if _.source_node.id == node_id or _.dest_node.id == node_id
+        ]
+        return edge_search

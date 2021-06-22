@@ -50,3 +50,35 @@ class MercuryContainer:
 
         assert self.container_state["Running"]
         self._container.commit(repository=build_img_name, tag=build_img_tag)
+
+    def execute_code(self, code: str) -> tuple:
+        logger.info("Executing code in docker container")
+        logger.info(code)
+
+        cmd = f"python3 -m container.cli execute-code --code '{code}'"
+        logger.info(f"Docker exec command: {cmd}")
+        exit_code, container_output = self._container.exec_run(cmd)
+
+        if exit_code != 0:
+            logger.warning("code did not run successfully in kernel")
+            print(container_output)
+
+        return exit_code, container_output
+
+    def write_variables_to_json(
+        self, source_outputs: list, dest_inputs: list, json_fp: str
+    ) -> tuple:
+        logger.info("Writing variables from docker environment")
+
+        source_outputs_list = "|".join(source_outputs)
+        dest_inputs_list = "|".join(dest_inputs)
+        cmd = f"python3 -m container.cli write-kernel-variables-to-json --source_outputs '{source_outputs_list}' --dest_inputs '{dest_inputs_list}'  --json '{json_fp}'"
+        logger.info(f"Docker exec command: {cmd}")
+
+        exit_code, container_output = self._container.exec_run(cmd)
+
+        if exit_code != 0:
+            logger.warning("code did not run successfully in kernel")
+            print(container_output)
+
+        return exit_code, container_output
