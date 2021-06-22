@@ -239,57 +239,72 @@ class NodeNotebookHandler(MercuryHandler):
         assert data["data"].get("type") == "nodes"
         assert data["data"].get("id") == node_id
         assert "attributes" in data["data"]
-        assert "state" in data["data"].get("attributes")
+        assert "state" in data["data"].get("attributes") or "kernel_state" in data[
+            "data"
+        ].get("attributes")
 
-        change_state = data["data"]["attributes"]["state"]
-        assert change_state in ["run", "write_json"]
-
-        if change_state == "run":
-            assert "code" in data["data"].get("attributes")
-            code = data["data"]["attributes"]["code"]
-            exit_code, container_output = node.execute_code(code)
-
-        if change_state == "write_json":
-            edges = self.application.dag.get_node_edges(node.id)
-            container_output = "".encode()
-            exit_code = -1
-            if not edges:
-                logger.warning("This node does not have any edges")
-            for edge in edges:
-                if edge.source_node != node:
-                    continue
-                # variables that have to be written as keys in json
-                dest_inputs = [
-                    _["destination"]["input"] for _ in edge.source_dest_connect
-                ]
-                # variables for which we need to get values from within the kernel
-                source_outputs = [
-                    _["source"]["output"] for _ in edge.source_dest_connect
-                ]
-                logger.info(f"writing for edge {edge.id}")
-                exit_code, container_output = node.write_output_to_json(
-                    source_outputs,
-                    dest_inputs,
-                    edge.json_path_container,
-                )
-
-        data = {
+        response_data = {
             "id": node.id,
             "type": self.json_type,
             "attributes": get_node_attrs(node),
         }
 
-        data["attributes"]["notebook_attributes"]["container_log"] = json.dumps(
-            container_output.decode("utf-8")
-        )
-        data["attributes"]["notebook_attributes"]["exit_code"] = exit_code
+        if "state" in data["data"]["attributes"]:
+
+            change_state = data["data"]["attributes"]["state"]
+            assert change_state in ["run", "write_json"]
+
+            if change_state == "run":
+                assert "code" in data["data"].get("attributes")
+                code = data["data"]["attributes"]["code"]
+                exit_code, container_output = node.execute_code(code)
+
+            if change_state == "write_json":
+                edges = self.application.dag.get_node_edges(node.id)
+                container_output = "".encode()
+                exit_code = -1
+                if not edges:
+                    logger.warning("This node does not have any edges")
+                for edge in edges:
+                    if edge.source_node != node:
+                        continue
+                    # variables that have to be written as keys in json
+                    dest_inputs = [
+                        _["destination"]["input"] for _ in edge.source_dest_connect
+                    ]
+                    # variables for which we need to get values from within the kernel
+                    source_outputs = [
+                        _["source"]["output"] for _ in edge.source_dest_connect
+                    ]
+                    logger.info(f"writing for edge {edge.id}")
+                    exit_code, container_output = node.write_output_to_json(
+                        source_outputs,
+                        dest_inputs,
+                        edge.json_path_container,
+                    )
+
+            response_data["attributes"]["notebook_attributes"][
+                "container_log"
+            ] = json.dumps(container_output.decode("utf-8"))
+            response_data["attributes"]["notebook_attributes"]["exit_code"] = exit_code
+
+        if "kernel_state" in data["data"]["attributes"]:
+            kernel_state = data["data"]["attributes"].get("kernel_state")
+            node.mercury_container.kernel_state = kernel_state
+            response_data["attributes"]["notebook_attributes"][
+                "kernel_state"
+            ] = kernel_state
 
         edges = self.application.dag.get_node_edges(node.id)
         input_code = get_node_input_code_snippet(node, edges)
         output_code = get_node_output_code_snippet(node, edges)
-        data["attributes"]["notebook_attributes"]["io"]["input_code"] = input_code
-        data["attributes"]["notebook_attributes"]["io"]["output_code"] = output_code
+        response_data["attributes"]["notebook_attributes"]["io"][
+            "input_code"
+        ] = input_code
+        response_data["attributes"]["notebook_attributes"]["io"][
+            "output_code"
+        ] = output_code
 
         self.set_status(200)
-        self.write({"data": data})
+        self.write({"data": response_data})
         self.set_header("Content-Type", "application/vnd.api+json")

@@ -9,6 +9,7 @@ class MercuryContainer:
         self._container: docker.models.containers.Container = container
         self._container_id: str = container.id
         self._container_state: dict = None
+        self._kernel_state: str = None
 
     @property
     def container(self) -> docker.models.containers.Container:
@@ -33,6 +34,14 @@ class MercuryContainer:
     @property
     def container_id(self) -> str:
         return self._container_id
+
+    @property
+    def kernel_state(self) -> str:
+        return self._kernel_state
+
+    @kernel_state.setter
+    def kernel_state(self, kernel_state: str) -> str:
+        self._kernel_state = kernel_state
 
     def commit(
         self,
