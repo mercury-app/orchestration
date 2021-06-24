@@ -1,9 +1,11 @@
 import json
 import logging
 
+from tornado.websocket import WebSocketClosedError
+
 from mercury.node import MercuryNode
 
-from server.views import MercuryHandler
+from server.views import MercuryHandler, MercuryWsHandler
 from server.views.utils import (
     get_node_attrs,
     get_node_input_code_snippet,
@@ -249,6 +251,16 @@ class NodeNotebookHandler(MercuryHandler):
             "attributes": get_node_attrs(node),
         }
 
+        edges = self.application.dag.get_node_edges(node.id)
+        input_code = get_node_input_code_snippet(node, edges)
+        output_code = get_node_output_code_snippet(node, edges)
+        response_data["attributes"]["notebook_attributes"]["io"][
+            "input_code"
+        ] = input_code
+        response_data["attributes"]["notebook_attributes"]["io"][
+            "output_code"
+        ] = output_code
+
         if "state" in data["data"]["attributes"]:
 
             change_state = data["data"]["attributes"]["state"]
@@ -295,16 +307,31 @@ class NodeNotebookHandler(MercuryHandler):
                 "kernel_state"
             ] = kernel_state
 
-        edges = self.application.dag.get_node_edges(node.id)
-        input_code = get_node_input_code_snippet(node, edges)
-        output_code = get_node_output_code_snippet(node, edges)
-        response_data["attributes"]["notebook_attributes"]["io"][
-            "input_code"
-        ] = input_code
-        response_data["attributes"]["notebook_attributes"]["io"][
-            "output_code"
-        ] = output_code
+            # write to websocket here if a websocket is open and instantialised
+            if node_id in KernelInfoHandler._instances:
+                try:
+                    logger.info(f"sending message to websocket for node {node_id}")
+                    KernelInfoHandler._instances[node_id].write_message(response_data)
+                except WebSocketClosedError as e:
+                    logger.warning("tried writing to websocket but it is closed")
 
         self.set_status(200)
         self.write({"data": response_data})
         self.set_header("Content-Type", "application/vnd.api+json")
+
+
+class KernelInfoHandler(MercuryWsHandler):
+    _instances = dict()
+    json_type = "nodes"
+
+    def open(self, node_id):
+        if self.application.dag.get_node(node_id):
+            KernelInfoHandler._instances[node_id] = self
+            logger.info(f"Websocket connection opened for node {node_id}")
+        else:
+            self.close(code=403, reason="tried connecting to a node that doesn't exist")
+
+    def on_close(self):
+        del_node_id = self.request.uri.split("/")[2]
+        if del_node_id in KernelInfoHandler._instances:
+            del KernelInfoHandler._instances[del_node_id]
