@@ -234,16 +234,25 @@ class NodeImageHandler(MercuryHandler):
 class NodeNotebookHandler(MercuryHandler):
     json_type = "nodes"
 
-    def patch(self, node_id):
+    async def patch(self, node_id):
         data = json.loads(self.request.body)
         node = self.application.dag.get_node(node_id)
 
         assert data["data"].get("type") == "nodes"
         assert data["data"].get("id") == node_id
         assert "attributes" in data["data"]
-        assert "state" in data["data"].get("attributes") or "kernel_state" in data[
-            "data"
-        ].get("attributes")
+        assert any(
+            [
+                _ in data["data"].get("attributes")
+                for _ in [
+                    "state",
+                    "kernel_state",
+                    "workflow_kernel_state",
+                    "notebook_exec_exit_code",
+                    "jupyter_server",
+                ]
+            ]
+        )
 
         response_data = {
             "id": node.id,
@@ -306,6 +315,45 @@ class NodeNotebookHandler(MercuryHandler):
             response_data["attributes"]["notebook_attributes"][
                 "kernel_state"
             ] = kernel_state
+
+            # write to websocket here if a websocket is open and instantialised
+            if node_id in KernelInfoHandler._instances:
+                try:
+                    logger.info(f"sending message to websocket for node {node_id}")
+                    KernelInfoHandler._instances[node_id].write_message(response_data)
+                except WebSocketClosedError as e:
+                    logger.warning("tried writing to websocket but it is closed")
+
+        if "workflow_kernel_state" in data["data"]["attributes"]:
+            workflow_kernel_state = data["data"]["attributes"].get(
+                "workflow_kernel_state"
+            )
+            node.mercury_container.workflow_kernel_state = workflow_kernel_state
+            response_data["attributes"]["notebook_attributes"][
+                "workflow_kernel_state"
+            ] = workflow_kernel_state
+
+            # write to websocket here if a websocket is open and instantialised
+            if node_id in KernelInfoHandler._instances:
+                try:
+                    logger.info(f"sending message to websocket for node {node_id}")
+                    KernelInfoHandler._instances[node_id].write_message(response_data)
+                except WebSocketClosedError as e:
+                    logger.warning("tried writing to websocket but it is closed")
+
+        if "notebook_exec_exit_code" in data["data"]["attributes"]:
+            exit_code = data["data"]["attributes"]["notebook_exec_exit_code"]
+            node.mercury_container.notebook_exec_exit_code = exit_code
+            response_data["attributes"]["notebook_attributes"][
+                "notebook_exec_exit_code"
+            ] = exit_code
+
+        if "jupyter_server" in data["data"]["attributes"]:
+            jupyter_server_state = data["data"]["attributes"]["jupyter_server"]
+            node.mercury_container.jupyter_server = jupyter_server_state
+            response_data["attributes"]["notebook_attributes"][
+                "jupyter_server"
+            ] = jupyter_server_state
 
             # write to websocket here if a websocket is open and instantialised
             if node_id in KernelInfoHandler._instances:
