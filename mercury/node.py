@@ -129,9 +129,10 @@ class MercuryNode:
         assert self._mercury_container.container_state["Running"]
 
         logger.info(f"Running in container {self._mercury_container.container_id}")
-        exit_code, output = self._mercury_container.container.exec_run(
-            "echo 'dasdasds'"
-        )
+        cmd = "python3 -m container.cli run-notebook --notebook_path='work/scripts/Untitled.ipynb'"
+        # detached state could be used for running multiple containers together in workflow run
+        exit_code, output = self._mercury_container.container.exec_run(cmd, detach=True)
+        logger.info(f"exit code: {exit_code}")
         return exit_code, output
 
     def execute_code(self, code) -> tuple:
