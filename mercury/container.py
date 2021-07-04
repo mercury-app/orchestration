@@ -10,6 +10,9 @@ class MercuryContainer:
         self._container_id: str = container.id
         self._container_state: dict = None
         self._kernel_state: str = None
+        self._workflow_kernel_state: str = None
+        self._notebook_exec_exit_code: int = -1
+        self._jupyter_server: bool = False
 
     @property
     def container(self) -> docker.models.containers.Container:
@@ -40,8 +43,32 @@ class MercuryContainer:
         return self._kernel_state
 
     @kernel_state.setter
-    def kernel_state(self, kernel_state: str) -> str:
-        self._kernel_state = kernel_state
+    def kernel_state(self, state: str):
+        self._kernel_state = state
+
+    @property
+    def workflow_kernel_state(self) -> str:
+        return self._workflow_kernel_state
+
+    @workflow_kernel_state.setter
+    def workflow_kernel_state(self, state: str):
+        self._workflow_kernel_state = state
+
+    @property
+    def notebook_exec_exit_code(self) -> int:
+        return self._notebook_exec_exit_code
+
+    @notebook_exec_exit_code.setter
+    def notebook_exec_exit_code(self, exit_code: int):
+        self._notebook_exec_exit_code = exit_code
+
+    @property
+    def jupyter_server(self) -> bool:
+        return self._jupyter_server
+
+    @jupyter_server.setter
+    def jupyter_server(self, jupyter_server_state: bool):
+        self._jupyter_server = jupyter_server_state
 
     def commit(
         self,
