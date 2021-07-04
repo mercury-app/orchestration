@@ -31,7 +31,7 @@ class Application(tornado.web.Application):
             (r"/nodes/([^/\s]+)/ws", KernelInfoHandler),
             (r"/nodes(?:/([^/\s]+))?", NodeHandler),
             (r"/connectors(?:/([^/\s]+))?", ConnectorHandler),
-            (r"/workflows", WorkflowHandler),
+            (r"/workflows(?:/([^/\s]+))?", WorkflowHandler),
         ]
         super().__init__(self.handlers, debug=True)
 

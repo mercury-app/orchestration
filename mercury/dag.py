@@ -94,3 +94,58 @@ class MercuryDag:
             if _.source_node.id == node_id or _.dest_node.id == node_id
         ]
         return edge_search
+
+    def get_node_input_edges(self, node_id: str) -> List[MercuryEdge]:
+        edge_search = [_ for _ in self.edges if _.dest_node.id == node_id]
+        return edge_search
+
+    async def run_dag(self, n_max_parallel: int = 2):
+
+        nodes_executed = []
+        # use brute force to find a node ready for execution
+        node_to_execute = True
+        while node_to_execute:
+            node_to_execute = False
+            for node in self._nxdag.nodes:
+                if node.id in nodes_executed:
+                    continue
+
+                if not node.input:
+                    node_to_execute = node
+                    break
+
+                input_edges = self.get_node_input_edges(node)
+                if all(
+                    [
+                        input_edge.source_node.id in nodes_executed
+                        for input_edge in input_edges
+                    ]
+                ):
+                    node_to_execute = node
+                    break
+
+            if node_to_execute:
+                logger.info(f"Executing node: {node_to_execute.id}")
+
+                node_to_execute.run()
+                import asyncio
+
+                node_to_execute.mercury_container.notebook_exec_exit_code = -1
+                while True:
+                    await asyncio.sleep(1)
+                    if node_to_execute.mercury_container.notebook_exec_exit_code != -1:
+                        break
+
+                if node_to_execute.mercury_container.notebook_exec_exit_code == 1:
+                    logger.info(
+                        "Notebook did not execute successfully. Stopping workflow execution"
+                    )
+                    return 1
+
+                assert node_to_execute.mercury_container.notebook_exec_exit_code == 0
+                logger.info("Notebook executed successfully")
+                nodes_executed.append(node_to_execute.id)
+
+        logger.info(f"{len(nodes_executed)} nodes executed successfully")
+        logger.info("Workflow execution successful")
+        return 0

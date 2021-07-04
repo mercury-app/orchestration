@@ -1,8 +1,8 @@
 import logging
+import json
 
 from server.views import MercuryHandler
-from server.views.node import NodeHandler
-from server.views.connector import ConnectorHandler
+from server.views.utils import get_workflow_attrs
 
 logger = logging.getLogger(__name__)
 
@@ -10,36 +10,35 @@ logger = logging.getLogger(__name__)
 class WorkflowHandler(MercuryHandler):
     json_type = "workflows"
 
-    def get(self):
-        nodes = [
-            {"id": node.id, "type": NodeHandler.json_type}
-            for node in self.application.dag.nodes
-        ]
-
-        connectors = []
-        for _e in self.application.dag.edges:
-            for _c in _e.source_dest_connect:
-                connector = {
-                    "id": _c["connector_id"],
-                    "type": ConnectorHandler.json_type,
-                }
-                connectors.append(connector)
-
-        valid_connections = self.application.dag.get_valid_connections_for_nodes()
-        valid_connections = {
-            src.id: [dest.id for dest in valid_connections.get(src)]
-            for src in valid_connections
-        }
+    def get(self, workflow_id=None):
         data = {
             "id": self.application.dag.id,
             "type": self.json_type,
-            "attributes": {
-                "nodes": nodes,
-                "connectors": connectors,
-                "valid_connections": valid_connections,
-            },
+            "attributes": get_workflow_attrs(self.application.dag),
         }
 
         self.set_status(200)
         self.write({"data": [data]})
+        self.set_header("Content-Type", "application/vnd.api+json")
+
+    async def patch(self, workflow_id):
+        data = json.loads(self.request.body)
+
+        assert data["data"].get("type") == "workflows"
+        assert data["data"].get("id") == workflow_id
+        assert "attributes" in data["data"]
+        assert "state" in data["data"].get("attributes")
+
+        assert data["data"]["attributes"]["state"] in ["run", "pause", "stop"]
+
+        if data["data"]["attributes"]["state"] == "run":
+            exit_code = await self.application.dag.run_dag()
+
+        response = {
+            "id": self.application.dag.id,
+            "type": self.json_type,
+            "attributes": get_workflow_attrs(self.application.dag),
+        }
+        response["attributes"]["run_exit_code"] = exit_code
+        self.write({"data": response})
         self.set_header("Content-Type", "application/vnd.api+json")
