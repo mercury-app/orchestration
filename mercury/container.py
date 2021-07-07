@@ -13,6 +13,7 @@ class MercuryContainer:
         self._workflow_kernel_state: str = None
         self._notebook_exec_exit_code: int = -1
         self._jupyter_server: bool = False
+        self._notebook_exec_pid: int = None
 
     @property
     def container(self) -> docker.models.containers.Container:
@@ -61,6 +62,14 @@ class MercuryContainer:
     @notebook_exec_exit_code.setter
     def notebook_exec_exit_code(self, exit_code: int):
         self._notebook_exec_exit_code = exit_code
+
+    @property
+    def notebook_exec_pid(self) -> int:
+        return self._notebook_exec_pid
+
+    @notebook_exec_pid.setter
+    def notebook_exec_pid(self, pid: int):
+        self._notebook_exec_pid = pid
 
     @property
     def jupyter_server(self) -> bool:

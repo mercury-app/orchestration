@@ -15,6 +15,7 @@ class MercuryDag:
     def __init__(self):
         self.id = uuid4().hex
         self._nxdag = nx.DiGraph()
+        self._state: str = None
 
     @property
     def nodes(self) -> List[MercuryNode]:
@@ -99,6 +100,14 @@ class MercuryDag:
         edge_search = [_ for _ in self.edges if _.dest_node.id == node_id]
         return edge_search
 
+    @property
+    def state(self) -> str:
+        return self._state
+
+    @state.setter
+    def state(self, workflow_state: str) -> None:
+        self._state = workflow_state
+
     async def run_dag(self, n_max_parallel: int = 2):
 
         nodes_executed = []
@@ -133,13 +142,23 @@ class MercuryDag:
 
                 node_to_execute.mercury_container.notebook_exec_exit_code = -1
                 while True:
+                    # await here to send kernel status message, and receive stop signals
                     await asyncio.sleep(1)
+                    if self._state == "stop":
+                        logger.info(
+                            "Stopping workflow run. Sending stop signal to running node"
+                        )
+                        node_stop_exit_code, _ = await node_to_execute.stop()
+                        logger.info(f"Node stop exit code: {node_stop_exit_code}")
+                        break
+
                     if node_to_execute.mercury_container.notebook_exec_exit_code != -1:
                         break
 
                 if node_to_execute.mercury_container.notebook_exec_exit_code == 1:
                     logger.info(
-                        "Notebook did not execute successfully. Stopping workflow execution"
+                        "Notebook did not execute successfully or was stopped in the middle.\
+                        Stopping workflow execution"
                     )
                     return 1
 

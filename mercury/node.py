@@ -114,7 +114,7 @@ class MercuryNode:
     # run can either start a new container if a container is not
     # running for the node, or reuse the running container for running
     # the workflow in the notebook.
-    def run(self) -> str:
+    def run(self) -> None:
         """Run the node end to end.
 
         Returns
@@ -122,7 +122,7 @@ class MercuryNode:
         str
             [description]
         """
-        logger.info("Running container")
+        logger.info("Running notebook in container")
 
         if not self._mercury_container:
             self.initialise_container()
@@ -131,9 +131,23 @@ class MercuryNode:
         logger.info(f"Running in container {self._mercury_container.container_id}")
         cmd = "python3 -m container.cli run-notebook --notebook_path='work/scripts/Untitled.ipynb'"
         # detached state could be used for running multiple containers together in workflow run
-        exit_code, output = self._mercury_container.container.exec_run(cmd, detach=True)
-        logger.info(f"exit code: {exit_code}")
-        return exit_code, output
+        self._mercury_container.container.exec_run(cmd, detach=True)
+        # logger.info(f"exit code: {exit_code}")
+        # return exit_code, output
+
+    def stop(self) -> str:
+        logger.info("stopping notebook in container")
+        logger.info(
+            f"stopping process {self._mercury_container.notebook_exec_pid} in container"
+        )
+
+        assert self._mercury_container._notebook_exec_pid
+
+        cmd = f"kill {self._mercury_container._notebook_exec_pid}"
+        exit_code, output = self._mercury_container.container.exec_run(
+            cmd, detach=False
+        )
+        return exit_code
 
     def execute_code(self, code) -> tuple:
         return self._mercury_container.execute_code(code)

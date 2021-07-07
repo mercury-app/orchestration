@@ -249,6 +249,7 @@ class NodeNotebookHandler(MercuryHandler):
                     "kernel_state",
                     "workflow_kernel_state",
                     "notebook_exec_exit_code",
+                    "notebook_exec_pid",
                     "jupyter_server",
                 ]
             ]
@@ -347,6 +348,13 @@ class NodeNotebookHandler(MercuryHandler):
             response_data["attributes"]["notebook_attributes"][
                 "notebook_exec_exit_code"
             ] = exit_code
+
+        if "notebook_exec_pid" in data["data"]["attributes"]:
+            pid = data["data"]["attributes"]["notebook_exec_pid"]
+            node.mercury_container.notebook_exec_pid = pid
+            response_data["attributes"]["notebook_attributes"][
+                "notebook_exec_pid"
+            ] = pid
 
         if "jupyter_server" in data["data"]["attributes"]:
             jupyter_server_state = data["data"]["attributes"]["jupyter_server"]
