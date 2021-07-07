@@ -88,7 +88,8 @@ class MercuryEdge:
         return code
 
     def get_output_code_snippet(self) -> str:
-        code = "{\n"
+        code = "import json\n"
+        code += "export_variables = {\n"
 
         for source_dest_map in self.source_dest_connect:
             # check type from within the kernel here?
@@ -96,5 +97,7 @@ class MercuryEdge:
             dest_input_name = source_dest_map["destination"]["input"]
             code += f"'{dest_input_name}' : {source_output_name}, \n"
 
-        code += "}"
+        code += "}\n"
+        code += f"json.dump(export_variables, open('{self._json_path_container}', 'w'))"
+
         return code

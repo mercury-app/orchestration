@@ -111,10 +111,11 @@ class MercuryDag:
                     continue
 
                 if not node.input:
+                    logger.info("executing node with no inputs")
                     node_to_execute = node
                     break
 
-                input_edges = self.get_node_input_edges(node)
+                input_edges = self.get_node_input_edges(node.id)
                 if all(
                     [
                         input_edge.source_node.id in nodes_executed
