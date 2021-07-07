@@ -29,10 +29,15 @@ class WorkflowHandler(MercuryHandler):
         assert "attributes" in data["data"]
         assert "state" in data["data"].get("attributes")
 
-        assert data["data"]["attributes"]["state"] in ["run", "pause", "stop"]
+        assert data["data"]["attributes"]["state"] in ["run", "stop"]
 
         if data["data"]["attributes"]["state"] == "run":
+            self.application.dag.state = "running"
             exit_code = await self.application.dag.run_dag()
+            self.application.dag.state = None
+
+        if data["data"]["attributes"]["state"] == "stop":
+            self.application.dag.state = "stop"
 
         response = {
             "id": self.application.dag.id,

@@ -75,6 +75,7 @@ def get_node_attrs(node: MercuryNode) -> dict:
             "kernel_state": node.mercury_container.kernel_state,
             "workflow_kernel_state": node.mercury_container.workflow_kernel_state,
             "jupyter_server": node.mercury_container.jupyter_server,
+            "notebook_exec_pid": None,
             "notebook_exec_exit_code": node.mercury_container.notebook_exec_exit_code,
             "io": {"input_code": None, "output_code": None},
         },
@@ -104,5 +105,6 @@ def get_workflow_attrs(dag: MercuryDag) -> dict:
         "connectors": connectors,
         "valid_connections": valid_connections,
         "run_exit_code": -1,
+        "state": "idle",
     }
     return attrs_data
