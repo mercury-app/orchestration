@@ -144,13 +144,13 @@ class MercuryDag:
                 while True:
                     # await here to send kernel status message, and receive stop signals
                     await asyncio.sleep(1)
+                    logger.info(f"dag state : {self._state}")
                     if self._state == "stop":
                         logger.info(
                             "Stopping workflow run. Sending stop signal to running node"
                         )
-                        node_stop_exit_code, _ = await node_to_execute.stop()
+                        node_stop_exit_code, _ = node_to_execute.stop()
                         logger.info(f"Node stop exit code: {node_stop_exit_code}")
-                        break
 
                     if node_to_execute.mercury_container.notebook_exec_exit_code != -1:
                         break

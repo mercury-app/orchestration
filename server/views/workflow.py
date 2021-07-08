@@ -37,7 +37,9 @@ class WorkflowHandler(MercuryHandler):
             self.application.dag.state = None
 
         if data["data"]["attributes"]["state"] == "stop":
+            logger.info("received stop signal")
             self.application.dag.state = "stop"
+            exit_code = 1
 
         response = {
             "id": self.application.dag.id,

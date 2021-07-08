@@ -147,7 +147,8 @@ class MercuryNode:
         exit_code, output = self._mercury_container.container.exec_run(
             cmd, detach=False
         )
-        return exit_code
+        self._mercury_container.notebook_exec_exit_code = 1
+        return exit_code, output
 
     def execute_code(self, code) -> tuple:
         return self._mercury_container.execute_code(code)
