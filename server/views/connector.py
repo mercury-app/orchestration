@@ -12,13 +12,13 @@ logger = logging.getLogger(__name__)
 class ConnectorHandler(MercuryHandler):
     json_type = "connectors"
 
-    def get(self, connector_id):
+    def get(self, workflow_id, connector_id):
 
         # only work for a particular connector id for now
         assert connector_id
 
         connector_edge = None
-        for _e in self.application.dag.edges:
+        for _e in self.application.workflows.get(workflow_id).edges:
 
             for _c in _e.source_dest_connect:
                 if _c["connector_id"] == connector_id:
@@ -48,7 +48,7 @@ class ConnectorHandler(MercuryHandler):
         self.write({"data": data})
         self.set_header("Content-Type", "application/vnd.api+json")
 
-    def post(self, _):
+    def post(self, workflow_id, _):
         data = json.loads(self.request.body)
 
         assert data["data"].get("type") == self.json_type
@@ -63,10 +63,11 @@ class ConnectorHandler(MercuryHandler):
         assert "node_id" in attr_data.get("source")
         assert "node_id" in attr_data.get("destination")
 
-        source_node = self.application.dag.get_node(attr_data["source"].get("node_id"))
-        dest_node = self.application.dag.get_node(
-            attr_data["destination"].get("node_id")
-        )
+        assert workflow_id in self.application.workflows
+        dag = self.application.workflows.get(workflow_id)
+
+        source_node = dag.get_node(attr_data["source"].get("node_id"))
+        dest_node = dag.get_node(attr_data["destination"].get("node_id"))
 
         # nodes have to exist
         assert source_node
@@ -85,14 +86,14 @@ class ConnectorHandler(MercuryHandler):
         assert attr_data["source"].get("output") in source_node.output
         assert attr_data["destination"].get("input") in dest_node.input
 
-        edge = self.application.dag.get_edge_from_nodes(
+        edge = dag.get_edge_from_nodes(
             source_node_id=attr_data["source"].get("node_id"),
             detination_node_id=attr_data["destination"].get("node_id"),
         )
 
         if not edge:
             edge = MercuryEdge(source_node, dest_node)
-            self.application.dag.add_edge(edge)
+            dag.add_edge(edge)
 
         source_dest_map = {
             "source": {"output": attr_data["source"].get("output")},
@@ -119,12 +120,15 @@ class ConnectorHandler(MercuryHandler):
         self.write({"data": data})
         self.set_header("Content-Type", "application/vnd.api+json")
 
-    def delete(self, connector_id):
+    def delete(self, workflow_id, connector_id):
+        assert connector_id in self.application.workflows
+
         # only work for a particular connector id for now
         assert connector_id
 
+        dag = self.application.workflows.get(workflow_id)
         connector_edge = None
-        for _e in self.application.dag.edges:
+        for _e in dag.edges:
 
             for del_i, _c in enumerate(_e.source_dest_connect):
                 if _c["connector_id"] == connector_id:
@@ -139,7 +143,7 @@ class ConnectorHandler(MercuryHandler):
         # Delete an edge if all connectors related to an edge
         # have been deleted
         if len(connector_edge.source_dest_connect) == 0:
-            self.application.dag.remove_edge(connector_edge)
+            dag.remove_edge(connector_edge)
 
         self.set_status(204)
         self.set_header("Content-Type", "application/vnd.api+json")

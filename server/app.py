@@ -23,14 +23,14 @@ class Application(tornado.web.Application):
     def __init__(self):
         # setting up a dag as an attribute of this class
         # all base classes can modify it
-        self.dag = MercuryDag()
+        self.workflows = {}
         self.handlers = [
             (r"/", MercuryHandler),
-            (r"/nodes/([^/\s]+)/image", NodeImageHandler),
             (r"/nodes/([^/\s]+)/notebook", NodeNotebookHandler),
             (r"/nodes/([^/\s]+)/ws", KernelInfoHandler),
-            (r"/nodes(?:/([^/\s]+))?", NodeHandler),
-            (r"/connectors(?:/([^/\s]+))?", ConnectorHandler),
+            (r"/workflows/([^/\s]+)/nodes/([^/\s]+)/image", NodeImageHandler),
+            (r"/workflows/([^/\s]+)/nodes(?:/([^/\s]+))?", NodeHandler),
+            (r"/workflows/([^/\s]+)/connectors(?:/([^/\s]+))?", ConnectorHandler),
             (r"/workflows(?:/([^/\s]+))?", WorkflowHandler),
         ]
         super().__init__(self.handlers, debug=True)

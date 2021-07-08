@@ -21,7 +21,7 @@ class NodeHandler(MercuryHandler):
     # decorator to wrap and create a json api response, wrap in data, attributes, types
     json_type = "nodes"
 
-    def get(self, node_id=None):
+    def get(self, workflow_id, node_id=None):
         """Returns the node(s) available
         ---
         tags: [Nodes]
@@ -43,11 +43,13 @@ class NodeHandler(MercuryHandler):
                             items:
                                 NoSchema
         """
+        assert workflow_id in self.application.workflows
+
         if node_id:
-            node = self.application.dag.get_node(node_id)
+            node = self.application.workflows.get(workflow_id).get_node(node_id)
             nodes = [node]
         else:
-            nodes = self.application.dag.nodes
+            nodes = self.application.workflows.get(workflow_id).nodes
 
         data = []
 
@@ -76,7 +78,7 @@ class NodeHandler(MercuryHandler):
         self.set_header("Content-Type", "application/vnd.api+json")
 
     # _ parameter added as post expects two arguments from route
-    def post(self, _):
+    def post(self, workflow_id, _):
         """Creates a new node and runs its container
         ---
         tags: [Nodes]
@@ -101,11 +103,13 @@ class NodeHandler(MercuryHandler):
                             items:
                                 NoSchema
         """
+        assert workflow_id in self.application.workflows
+
         data = json.loads(self.request.body)
         node = MercuryNode(**data.get("attributes", {}))
 
         # add the node to the dag first, as this sets the jupyter port
-        self.application.dag.add_node(node)
+        self.application.workflows.get(workflow_id).add_node(node)
 
         node.initialise_container()
 
@@ -120,7 +124,7 @@ class NodeHandler(MercuryHandler):
         self.write({"data": data})
         self.set_header("Content-Type", "application/vnd.api+json")
 
-    def patch(self, node_id):
+    def patch(self, workflow_id, node_id):
         """Updates properties of a node
         ---
         tags: [Nodes]
@@ -142,8 +146,10 @@ class NodeHandler(MercuryHandler):
                             items:
                                 NoSchema
         """
+        assert workflow_id in self.application.workflows
+
         data = json.loads(self.request.body)
-        node = self.application.dag.get_node(node_id)
+        node = self.application.workflows.get(workflow_id).get_node(node_id)
 
         node.input = data["data"].get("attributes", {}).get("input", node.input)
         node.output = data["data"].get("attributes", {}).get("output", node.output)
@@ -166,7 +172,7 @@ class NodeHandler(MercuryHandler):
 
         # to do: updation for other properties
 
-    def delete(self, node_id):
+    def delete(self, workflow_id, node_id):
         """Deletes the node
         ---
         tags: [Nodes]
@@ -188,9 +194,11 @@ class NodeHandler(MercuryHandler):
                             items:
                                 NoSchema
         """
-        node = self.application.dag.get_node(node_id)
+        assert workflow_id in self.application.workflows
+
+        node = self.application.workflows.get(workflow_id).get_node(node_id)
         node.mercury_container.container.kill()
-        self.application.dag.remove_node(node)
+        self.application.workflows.get(workflow_id).remove_node(node)
 
         self.set_status(204)
         self.set_header("Content-Type", "application/vnd.api+json")
@@ -201,9 +209,11 @@ class NodeHandler(MercuryHandler):
 class NodeImageHandler(MercuryHandler):
     json_type = "nodes"
 
-    def patch(self, node_id):
+    def patch(self, workflow_id, node_id):
         data = json.loads(self.request.body)
-        node = self.application.dag.get_node(node_id)
+        node = self.application.workflows.get(workflow_id).get_node(node_id)
+
+        assert workflow_id in self.application.workflows
 
         assert data["data"].get("type") == "nodes"
         assert data["data"].get("id") == node_id
