@@ -12,8 +12,13 @@ logger = logging.getLogger(__name__)
 
 
 class MercuryDag:
-    def __init__(self):
-        self.id = uuid4().hex
+    used_ports = set()
+
+    def __init__(self, id=None):
+        if id is not None:
+            self.id = id
+        else:
+            self.id = uuid4().hex
         self._nxdag = nx.DiGraph()
         self._state: str = None
 
@@ -27,12 +32,12 @@ class MercuryDag:
 
     def add_node(self, node: MercuryNode) -> None:
 
-        if len(self._nxdag.nodes) > 0:
-            used_ports = [_.jupyter_port for _ in self._nxdag.nodes]
-            print(used_ports)
-            port = max(used_ports) + 1
+        if node.jupyter_port in MercuryDag.used_ports:
+            port = max(MercuryDag.used_ports) + 1
             logger.info(f"Starting new container and mapping to port {port}")
             node.jupyter_port = port
+        MercuryDag.used_ports.add(node.jupyter_port)
+
         self._nxdag.add_node(node, id=node.id)
 
     def remove_node(self, node: MercuryNode) -> None:
@@ -63,13 +68,13 @@ class MercuryDag:
             return edge_search[0]
 
     def get_edge_from_nodes(
-        self, source_node_id: str, detination_node_id: str
+        self, source_node_id: str, destination_node_id: str
     ) -> MercuryEdge:
         edge_search = [
             _
             for _ in self.edges
             if _.source_node.id == source_node_id
-            and _.dest_node.id == detination_node_id
+            and _.dest_node.id == destination_node_id
         ]
         assert len(edge_search) < 3
         if len(edge_search) == 1:

@@ -82,6 +82,15 @@ def get_node_attrs(node: MercuryNode) -> dict:
     }
 
 
+def get_connector_attrs(edge: MercuryEdge, src_dest_map: dict):
+    return {
+        "source": {**src_dest_map["source"], "node_id": edge.source_node.id},
+        "destination": {
+            **src_dest_map["destination"],
+            "node_id": edge.dest_node.id,
+        },
+    }
+
 def get_workflow_attrs(dag: MercuryDag) -> dict:
     nodes = [{"id": node.id, "type": "nodes"} for node in dag.nodes]
 

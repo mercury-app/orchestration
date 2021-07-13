@@ -5,6 +5,7 @@ from uuid import uuid4
 from mercury.edge import MercuryEdge
 
 from server.views import MercuryHandler
+from server.views.utils import get_connector_attrs
 
 logger = logging.getLogger(__name__)
 
@@ -18,6 +19,7 @@ class ConnectorHandler(MercuryHandler):
         assert connector_id
 
         connector_edge = None
+        source_dest_map = None
         for _e in self.application.workflows.get(workflow_id).edges:
 
             for _c in _e.source_dest_connect:
@@ -32,16 +34,7 @@ class ConnectorHandler(MercuryHandler):
         data = {
             "id": source_dest_map["connector_id"],
             "type": self.json_type,
-            "attributes": {
-                "source": {
-                    **source_dest_map["source"],
-                    "node_id": connector_edge.source_node.id,
-                },
-                "destination": {
-                    **source_dest_map["destination"],
-                    "node_id": connector_edge.dest_node.id,
-                },
-            },
+            "attributes": get_connector_attrs(connector_edge, source_dest_map),
         }
 
         self.set_status(200)
@@ -88,7 +81,7 @@ class ConnectorHandler(MercuryHandler):
 
         edge = dag.get_edge_from_nodes(
             source_node_id=attr_data["source"].get("node_id"),
-            detination_node_id=attr_data["destination"].get("node_id"),
+            destination_node_id=attr_data["destination"].get("node_id"),
         )
 
         if not edge:
@@ -106,13 +99,7 @@ class ConnectorHandler(MercuryHandler):
         data = {
             "id": source_dest_map["connector_id"],
             "type": self.json_type,
-            "attributes": {
-                "source": {**source_dest_map["source"], "node_id": edge.source_node.id},
-                "destination": {
-                    **source_dest_map["destination"],
-                    "node_id": edge.dest_node.id,
-                },
-            },
+            "attributes": get_connector_attrs(edge, source_dest_map),
         }
 
         self.set_status(201)

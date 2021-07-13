@@ -18,22 +18,31 @@ logger = logging.getLogger(__name__)
 class MercuryNode:
     def __init__(
         self,
+        id: str = None,
         input: list = None,
         output: list = None,
-        docker_volume: str = None,  # TODO: make a default docker volume
         docker_img_name: str = None,
+        docker_img_tag: str = None,
+        docker_volume: str = None,  # TODO: make a default docker volume
+        container_id: str = None,
+        jupyter_port: int = None,
     ):
-        self.id = uuid4().hex
+        self.id = id if id is not None else uuid4().hex
         self._input = input
         self._output = output
 
-        self._docker_img_name = copy.copy(self.id)
+        self._docker_img_name = (
+            docker_img_name if docker_img_name is not None else copy.copy(self.id)
+        )
+        self._docker_img_tag = docker_img_tag if docker_img_tag is not None else "0"
         self._docker_volume = docker_volume
-        self._docker_img_tag = "0"
 
-        # Here, the container is itself changing on every execution
-        self._mercury_container: MercuryContainer = None
-        self._jupyter_port: int = 8880
+        if container_id is not None:
+            self._mercury_container = MercuryContainer.find(container_id)
+        else:
+            self._mercury_container: MercuryContainer = None
+
+        self._jupyter_port = jupyter_port if jupyter_port is not None else 8880
 
     def __str__(self) -> str:
         return self.id
@@ -100,7 +109,10 @@ class MercuryNode:
             ports={"8888/tcp": self._jupyter_port},
         )
         self._mercury_container = MercuryContainer(container_run)
-        logger.info(f"Initialised container {self._mercury_container.container_id}")
+        logger.info(f"Initialized container {self._mercury_container.container_id}")
+
+    def restart_container(self):
+        self._mercury_container.container.restart()
 
     def commit(self) -> str:
         self._docker_img_tag = str(int(self._docker_img_tag) + 1)

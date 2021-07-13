@@ -1,9 +1,15 @@
 import json
 import logging
+import re
+
+from mercury.node import MercuryNode
 from mercury.dag import MercuryDag
+from mercury.edge import MercuryEdge
 
 from server.views import MercuryHandler
-from server.views.utils import get_workflow_attrs
+from server.views.node import NodeHandler
+from server.views.connector import ConnectorHandler
+from server.views.utils import get_workflow_attrs, get_node_attrs, get_connector_attrs
 
 logger = logging.getLogger(__name__)
 
@@ -11,12 +17,18 @@ logger = logging.getLogger(__name__)
 class WorkflowHandler(MercuryHandler):
     json_type = "workflows"
 
-    def _data_for_id(self, workflow_id):
-        dag = self.application.workflows.get(workflow_id)
+    def _workflow_data_from_dag(self, dag):
         if dag is None:
             return {}
 
-        nodes = [{"id": node.id, "type": NodeHandler.json_type} for node in dag.nodes]
+        nodes = [
+            {
+                "id": node.id,
+                "type": NodeHandler.json_type,
+                "attributes": get_node_attrs(node),
+            }
+            for node in dag.nodes
+        ]
 
         connectors = []
         for _e in dag.edges:
@@ -24,6 +36,7 @@ class WorkflowHandler(MercuryHandler):
                 connector = {
                     "id": _c["connector_id"],
                     "type": ConnectorHandler.json_type,
+                    "attributes": get_connector_attrs(_e, _c),
                 }
                 connectors.append(connector)
 
@@ -40,15 +53,75 @@ class WorkflowHandler(MercuryHandler):
         }
         return data
 
+    def _dag_from_workflow_data(self, workflow_data):
+        dag = MercuryDag(workflow_data.get("id"))
+
+        nodes_data = workflow_data.get("attributes").get("nodes")
+        for node_data in nodes_data:
+            node_id = node_data.get("id")
+            node_attributes = node_data.get("attributes")
+            notebook_url = node_attributes.get("notebook_attributes").get("url")
+            jupyter_port = int(re.search(".*localhost:(\d*)/.*", notebook_url).group(1))
+            node = MercuryNode(
+                node_id,
+                node_attributes.get("input"),
+                node_attributes.get("output"),
+                node_attributes.get("image_attributes").get("name"),
+                node_attributes.get("image_attributes").get("tag"),
+                container_id=node_attributes.get("container_attributes").get("id"),
+                jupyter_port=jupyter_port,
+            )
+            dag.add_node(node)
+            if node.mercury_container is not None:
+                node.restart_container()
+            else:
+                node.initialise_container()
+
+        connectors_data = workflow_data.get("attributes").get("connectors")
+        for connector_data in connectors_data:
+            connector_attributes = connector_data.get("attributes")
+            print(connector_attributes)
+            source = connector_attributes.get("source")
+            dest = connector_attributes.get("destination")
+            source_node = dag.get_node(source.get("node_id"))
+            dest_node = dag.get_node(dest.get("node_id"))
+
+            # nodes should have already been created
+            assert source_node is not None
+            assert dest_node is not None
+
+            edge = dag.get_edge_from_nodes(
+                source_node_id=source.get("node_id"),
+                destination_node_id=dest.get("node_id"),
+            )
+            if not edge:
+                edge = MercuryEdge(source_node, dest_node)
+                dag.add_edge(edge)
+
+            source_dest_map = {
+                "source": {"output": source.get("output")},
+                "destination": {"input": dest.get("input")},
+                "connector_id": connector_data.get("id"),
+            }
+            edge.source_dest_connect.append(source_dest_map)
+
+        return dag
+
     def get(self, workflow_id=None):
         data = None
         if workflow_id is None:
             data = [
-                self._data_for_id(workflow_id)
-                for workflow_id in self.application.workflows
+                self._workflow_data_from_dag(dag)
+                for dag in self.application.workflows.values()
             ]
         else:
-            data = self._data_for_id(workflow_id)
+            dag = self.application.workflows.get(workflow_id)
+            if dag is None:
+                self.set_status(404)
+                self.write("Workflow not found")
+                return
+
+            data = self._workflow_data_from_dag(dag)
 
         self.set_status(200)
         self.write({"data": data})
@@ -64,11 +137,13 @@ class WorkflowHandler(MercuryHandler):
             self.write("Unrecognized resource type")
             return
 
-        # add the node to the dag first, as this sets the jupyter port
-        dag = MercuryDag()
-        self.application.workflows[dag.id] = dag
+        if "id" in data:
+            dag = self._dag_from_workflow_data(data)
+        else:
+            dag = MercuryDag()
 
-        data = self._data_for_id(dag.id)
+        self.application.workflows[dag.id] = dag
+        data = self._workflow_data_from_dag(dag)
 
         self.set_status(201)
         self.add_header("Location", f"/workflows/{dag.id}")
