@@ -80,7 +80,6 @@ class WorkflowHandler(MercuryHandler):
         connectors_data = workflow_data.get("attributes").get("connectors")
         for connector_data in connectors_data:
             connector_attributes = connector_data.get("attributes")
-            print(connector_attributes)
             source = connector_attributes.get("source")
             dest = connector_attributes.get("destination")
             source_node = dag.get_node(source.get("node_id"))
@@ -177,4 +176,18 @@ class WorkflowHandler(MercuryHandler):
         }
         response["attributes"]["run_exit_code"] = exit_code
         self.write({"data": response})
+        self.set_header("Content-Type", "application/vnd.api+json")
+
+    def delete(self, workflow_id):
+        assert workflow_id in self.application.workflows
+
+        dag: MercuryDag = self.application.workflows.get(workflow_id)
+        for edge in dag.edges:
+            dag.remove_edge(edge)
+        for node in dag.nodes:
+            node.mercury_container.container.kill()
+            dag.remove_node(node)
+        self.application.workflows.pop(workflow_id)
+
+        self.set_status(204)
         self.set_header("Content-Type", "application/vnd.api+json")
