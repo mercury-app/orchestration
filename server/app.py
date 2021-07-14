@@ -2,7 +2,6 @@ import tornado.web  # for handlers
 import tornado.ioloop  # for listening to port
 import logging
 
-from mercury.dag import MercuryDag
 from mercury.docker_client import docker_cl
 
 from server.views import MercuryHandler
@@ -38,7 +37,7 @@ class Application(tornado.web.Application):
 
 if __name__ == "__main__":
     # kill all running mercury containers
-    logger.info("Killing already running containers")
+    logger.info("Killing already running containers...")
     [
         _.kill()
         for _ in docker_cl.containers.list()

@@ -1,6 +1,5 @@
 import json
 import logging
-import re
 
 from mercury.node import MercuryNode
 from mercury.dag import MercuryDag
@@ -54,14 +53,24 @@ class WorkflowHandler(MercuryHandler):
         return data
 
     def _dag_from_workflow_data(self, workflow_data):
-        dag = MercuryDag(workflow_data.get("id"))
+        # When we restore an existing workflow, all the containers being used by current
+        # workflows must be stopped. Otherwise there is a chance of their port mappings
+        # colliding with each other and ports of existing containers cannot be changed.
+        from mercury.docker_client import docker_cl
+        logger.info("Killing already running containers...")
+        [
+            _.kill()
+            for _ in docker_cl.containers.list()
+            if "jupyter-mercury:latest" in _.image.tags
+        ]
+
+        logger.info("Restoring a workflow...")
+        dag = MercuryDag()
 
         nodes_data = workflow_data.get("attributes").get("nodes")
         for node_data in nodes_data:
             node_id = node_data.get("id")
             node_attributes = node_data.get("attributes")
-            notebook_url = node_attributes.get("notebook_attributes").get("url")
-            jupyter_port = int(re.search(".*localhost:(\d*)/.*", notebook_url).group(1))
             node = MercuryNode(
                 node_id,
                 node_attributes.get("input"),
@@ -69,7 +78,6 @@ class WorkflowHandler(MercuryHandler):
                 node_attributes.get("image_attributes").get("name"),
                 node_attributes.get("image_attributes").get("tag"),
                 container_id=node_attributes.get("container_attributes").get("id"),
-                jupyter_port=jupyter_port,
             )
             dag.add_node(node)
             if node.mercury_container is not None:
@@ -136,7 +144,7 @@ class WorkflowHandler(MercuryHandler):
             self.write("Unrecognized resource type")
             return
 
-        if "id" in data:
+        if "attributes" in data:
             dag = self._dag_from_workflow_data(data)
         else:
             dag = MercuryDag()

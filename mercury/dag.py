@@ -12,7 +12,6 @@ logger = logging.getLogger(__name__)
 
 
 class MercuryDag:
-    used_ports = set()
 
     def __init__(self, id=None):
         if id is not None:
@@ -32,11 +31,14 @@ class MercuryDag:
 
     def add_node(self, node: MercuryNode) -> None:
 
-        if node.jupyter_port in MercuryDag.used_ports:
-            port = max(MercuryDag.used_ports) + 1
-            logger.info(f"Starting new container and mapping to port {port}")
-            node.jupyter_port = port
-        MercuryDag.used_ports.add(node.jupyter_port)
+        def is_port_in_use(port):
+            import socket
+            with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+                return s.connect_ex(('localhost', port)) == 0
+
+        while is_port_in_use(node.jupyter_port):
+            node.jupyter_port += 1
+        logger.info(f"Starting container and mapping to port {node.jupyter_port}")
 
         self._nxdag.add_node(node, id=node.id)
 

@@ -25,7 +25,6 @@ class MercuryNode:
         docker_img_tag: str = None,
         docker_volume: str = None,  # TODO: make a default docker volume
         container_id: str = None,
-        jupyter_port: int = None,
     ):
         self.id = id if id is not None else uuid4().hex
         self._input = input
@@ -42,7 +41,7 @@ class MercuryNode:
         else:
             self._mercury_container: MercuryContainer = None
 
-        self._jupyter_port = jupyter_port if jupyter_port is not None else 8880
+        self._jupyter_port = 8880
 
     def __str__(self) -> str:
         return self.id
@@ -112,6 +111,10 @@ class MercuryNode:
         logger.info(f"Initialized container {self._mercury_container.container_id}")
 
     def restart_container(self):
+        self._mercury_container.container.attrs["HostConfig"]["PortBindings"][
+            "8888/tcp"
+        ] = [{"HostIp": "", "HostPort": str(self._jupyter_port)}]
+        self._mercury_container.container.reload()
         self._mercury_container.container.restart()
 
     def commit(self) -> str:
