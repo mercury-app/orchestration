@@ -21,7 +21,7 @@ def get_node_input_code_snippet(node: MercuryNode, edges: List[MercuryEdge]) -> 
         snippet = edge.get_input_code_snippet()
         if not snippet:
             continue
-        snippet = f"\n#from source node {edge.source_node.id}\n" + snippet
+        snippet = f"\n#from source node {edge.source_node.id}\n" + snippet + "\n"
         inputs_available_in_json += edge.json_inputs
         code_lines.append(snippet)
 
@@ -72,6 +72,39 @@ def get_node_attrs(node: MercuryNode) -> dict:
             "state": None,
             "exit_code": -1,
             "container_log": None,
+            "kernel_state": node.mercury_container.kernel_state,
+            "workflow_kernel_state": node.mercury_container.workflow_kernel_state,
+            "jupyter_server": node.mercury_container.jupyter_server,
+            "notebook_exec_pid": None,
+            "notebook_exec_exit_code": node.mercury_container.notebook_exec_exit_code,
             "io": {"input_code": None, "output_code": None},
         },
     }
+
+
+def get_workflow_attrs(dag: MercuryDag) -> dict:
+    nodes = [{"id": node.id, "type": "nodes"} for node in dag.nodes]
+
+    connectors = []
+    for _e in dag.edges:
+        for _c in _e.source_dest_connect:
+            connector = {
+                "id": _c["connector_id"],
+                "type": "connectors",
+            }
+            connectors.append(connector)
+
+    valid_connections = dag.get_valid_connections_for_nodes()
+    valid_connections = {
+        src.id: [dest.id for dest in valid_connections.get(src)]
+        for src in valid_connections
+    }
+
+    attrs_data = {
+        "nodes": nodes,
+        "connectors": connectors,
+        "valid_connections": valid_connections,
+        "run_exit_code": -1,
+        "state": "idle",
+    }
+    return attrs_data

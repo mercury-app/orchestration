@@ -9,6 +9,11 @@ class MercuryContainer:
         self._container: docker.models.containers.Container = container
         self._container_id: str = container.id
         self._container_state: dict = None
+        self._kernel_state: str = None
+        self._workflow_kernel_state: str = None
+        self._notebook_exec_exit_code: int = -1
+        self._jupyter_server: bool = False
+        self._notebook_exec_pid: int = None
 
     @property
     def container(self) -> docker.models.containers.Container:
@@ -33,6 +38,46 @@ class MercuryContainer:
     @property
     def container_id(self) -> str:
         return self._container_id
+
+    @property
+    def kernel_state(self) -> str:
+        return self._kernel_state
+
+    @kernel_state.setter
+    def kernel_state(self, state: str):
+        self._kernel_state = state
+
+    @property
+    def workflow_kernel_state(self) -> str:
+        return self._workflow_kernel_state
+
+    @workflow_kernel_state.setter
+    def workflow_kernel_state(self, state: str):
+        self._workflow_kernel_state = state
+
+    @property
+    def notebook_exec_exit_code(self) -> int:
+        return self._notebook_exec_exit_code
+
+    @notebook_exec_exit_code.setter
+    def notebook_exec_exit_code(self, exit_code: int):
+        self._notebook_exec_exit_code = exit_code
+
+    @property
+    def notebook_exec_pid(self) -> int:
+        return self._notebook_exec_pid
+
+    @notebook_exec_pid.setter
+    def notebook_exec_pid(self, pid: int):
+        self._notebook_exec_pid = pid
+
+    @property
+    def jupyter_server(self) -> bool:
+        return self._jupyter_server
+
+    @jupyter_server.setter
+    def jupyter_server(self, jupyter_server_state: bool):
+        self._jupyter_server = jupyter_server_state
 
     def commit(
         self,

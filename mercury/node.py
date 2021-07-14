@@ -89,7 +89,7 @@ class MercuryNode:
         """
         container_run = docker_cl.containers.run(
             BASE_DOCKER_IMAGE_NAME,
-            environment=self._input,
+            environment={"MERCURY_NODE": self.id},
             volumes={
                 DOCKER_COMMON_VOLUME: {
                     "bind": BASE_DOCKER_BIND_VOLUME,
@@ -114,7 +114,7 @@ class MercuryNode:
     # run can either start a new container if a container is not
     # running for the node, or reuse the running container for running
     # the workflow in the notebook.
-    def run(self) -> str:
+    def run(self) -> None:
         """Run the node end to end.
 
         Returns
@@ -122,16 +122,32 @@ class MercuryNode:
         str
             [description]
         """
-        logger.info("Running container")
+        logger.info("Running notebook in container")
 
         if not self._mercury_container:
             self.initialise_container()
         assert self._mercury_container.container_state["Running"]
 
         logger.info(f"Running in container {self._mercury_container.container_id}")
-        exit_code, output = self._mercury_container.container.exec_run(
-            "echo 'dasdasds'"
+        cmd = "python3 -m container.cli run-notebook --notebook_path='work/scripts/Untitled.ipynb'"
+        # detached state could be used for running multiple containers together in workflow run
+        self._mercury_container.container.exec_run(cmd, detach=True)
+        # logger.info(f"exit code: {exit_code}")
+        # return exit_code, output
+
+    def stop(self) -> str:
+        logger.info("stopping notebook in container")
+        logger.info(
+            f"stopping process {self._mercury_container.notebook_exec_pid} in container"
         )
+
+        assert self._mercury_container._notebook_exec_pid
+
+        cmd = f"kill {self._mercury_container._notebook_exec_pid}"
+        exit_code, output = self._mercury_container.container.exec_run(
+            cmd, detach=False
+        )
+        self._mercury_container.notebook_exec_exit_code = 1
         return exit_code, output
 
     def execute_code(self, code) -> tuple:
