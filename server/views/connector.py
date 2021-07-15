@@ -1,6 +1,8 @@
 import json
 import logging
+from mercury.dag import MercuryDag
 from uuid import uuid4
+from typing import Tuple
 
 from mercury.edge import MercuryEdge
 
@@ -13,24 +15,26 @@ logger = logging.getLogger(__name__)
 class ConnectorHandler(MercuryHandler):
     json_type = "connectors"
 
+    def _find_connector_index(
+        self, dag: MercuryDag, connector_id: str
+    ) -> Tuple[MercuryEdge, int]:
+        for edge in dag.edges:
+            for index, connector in enumerate(edge.source_dest_connect):
+                if connector["connector_id"] == connector_id:
+                    return (edge, index)
+        return (None, -1)
+
     def get(self, workflow_id, connector_id):
 
         # only work for a particular connector id for now
         assert connector_id
 
-        connector_edge = None
-        source_dest_map = None
-        for _e in self.application.workflows.get(workflow_id).edges:
-
-            for _c in _e.source_dest_connect:
-                if _c["connector_id"] == connector_id:
-                    connector_edge = _e
-                    source_dest_map = _c
-                    break
-            break
+        dag = self.application.workflows.get(workflow_id)
+        connector_edge, connector_index = self._find_connector_index(dag, connector_id)
 
         assert connector_edge, "This connector does not exist for any edge"
 
+        source_dest_map = connector_edge.source_dest_connect[connector_index]
         data = {
             "id": source_dest_map["connector_id"],
             "type": self.json_type,
@@ -108,24 +112,17 @@ class ConnectorHandler(MercuryHandler):
         self.set_header("Content-Type", "application/vnd.api+json")
 
     def delete(self, workflow_id, connector_id):
-        assert connector_id in self.application.workflows
+        assert workflow_id in self.application.workflows
 
         # only work for a particular connector id for now
         assert connector_id
 
         dag = self.application.workflows.get(workflow_id)
-        connector_edge = None
-        for _e in dag.edges:
-
-            for del_i, _c in enumerate(_e.source_dest_connect):
-                if _c["connector_id"] == connector_id:
-                    connector_edge = _e
-                    break
-            break
+        connector_edge, connector_index = self._find_connector_index(dag, connector_id)
 
         assert connector_edge, "This connector does not exist for any edge"
 
-        connector_edge.source_dest_connect.pop(del_i)
+        connector_edge.source_dest_connect.pop(connector_index)
 
         # Delete an edge if all connectors related to an edge
         # have been deleted
