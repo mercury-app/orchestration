@@ -52,7 +52,7 @@ class WorkflowHandler(MercuryHandler):
         }
         return data
 
-    def _dag_from_workflow_data(self, workflow_data):
+    def _dag_from_workflow_data(self, workflow_data, dag_id=None):
         # When we restore an existing workflow, all the containers being used by current
         # workflows must be stopped. Otherwise there is a chance of their port mappings
         # colliding with each other and ports of existing containers cannot be changed.
@@ -65,7 +65,7 @@ class WorkflowHandler(MercuryHandler):
         ]
 
         logger.info("Restoring a workflow...")
-        dag = MercuryDag()
+        dag = MercuryDag(dag_id)
 
         nodes_data = workflow_data.get("attributes").get("nodes")
         for node_data in nodes_data:
@@ -144,10 +144,11 @@ class WorkflowHandler(MercuryHandler):
             self.write("Unrecognized resource type")
             return
 
+        dag_id = data.get("id")
         if "attributes" in data:
-            dag = self._dag_from_workflow_data(data)
+            dag = self._dag_from_workflow_data(data, dag_id)
         else:
-            dag = MercuryDag()
+            dag = MercuryDag(dag_id)
 
         self.application.workflows[dag.id] = dag
         data = self._workflow_data_from_dag(dag)
