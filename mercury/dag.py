@@ -21,6 +21,8 @@ class MercuryDag:
         self._nxdag = nx.DiGraph()
         self._state: str = None
 
+        self._notebooks_dir = ""
+
     @property
     def nodes(self) -> List[MercuryNode]:
         return list(self._nxdag.nodes)
@@ -29,7 +31,16 @@ class MercuryDag:
     def edges(self) -> list:
         return [_[2]["object"] for _ in self._nxdag.edges(data=True)]
 
+    @property
+    def notebooks_dir(self) -> str:
+        return self._notebooks_dir
+
+    @notebooks_dir.setter
+    def notebooks_dir(self, dir: str):
+        self._notebooks_dir = dir
+
     def add_node(self, node: MercuryNode) -> None:
+        node.notebook_dir = self._notebooks_dir
 
         def is_port_in_use(port):
             import socket

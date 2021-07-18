@@ -6,9 +6,9 @@ import copy
 from mercury.docker_client import docker_cl
 from mercury.constants import (
     DEFAULT_DOCKER_VOL_MODE,
-    DOCKER_COMMON_VOLUME,
     BASE_DOCKER_IMAGE_NAME,
-    BASE_DOCKER_BIND_VOLUME,
+    BASE_DOCKER_HOME,
+    BASE_DOCKER_WORK_DIR
 )
 from mercury.container import MercuryContainer
 
@@ -18,6 +18,7 @@ logger = logging.getLogger(__name__)
 class MercuryNode:
     def __init__(
         self,
+        name: str,
         id: str = None,
         input: list = None,
         output: list = None,
@@ -26,6 +27,8 @@ class MercuryNode:
         docker_volume: str = None,  # TODO: make a default docker volume
         container_id: str = None,
     ):
+        self._name = name
+
         self.id = id if id is not None else uuid4().hex
         self._input = input
         self._output = output
@@ -41,10 +44,23 @@ class MercuryNode:
         else:
             self._mercury_container: MercuryContainer = None
 
+        self._notebook_dir = ""
         self._jupyter_port = 8880
 
     def __str__(self) -> str:
         return self.id
+
+    @property
+    def name(self) -> str:
+        return self._name;
+
+    @property
+    def notebook_dir(self) -> str:
+        return self._notebook_dir
+
+    @notebook_dir.setter
+    def notebook_dir(self, dir: str):
+        self._notebook_dir = dir
 
     @property
     def mercury_container(self) -> MercuryContainer:
@@ -99,8 +115,8 @@ class MercuryNode:
             BASE_DOCKER_IMAGE_NAME,
             environment={"MERCURY_NODE": self.id},
             volumes={
-                DOCKER_COMMON_VOLUME: {
-                    "bind": BASE_DOCKER_BIND_VOLUME,
+                f"{self._notebook_dir}": {
+                    "bind": f"{BASE_DOCKER_HOME}/{BASE_DOCKER_WORK_DIR}",
                     "mode": DEFAULT_DOCKER_VOL_MODE,
                 }
             },
@@ -108,6 +124,11 @@ class MercuryNode:
             ports={"8888/tcp": self._jupyter_port},
         )
         self._mercury_container = MercuryContainer(container_run)
+        exit_code, output = self._mercury_container.container.exec_run(
+            f"python3 create_notebook.py {BASE_DOCKER_WORK_DIR}/{self._name}.ipynb"
+        )
+        print(exit_code, output)
+
         logger.info(f"Initialized container {self._mercury_container.container_id}")
 
     def restart_container(self):

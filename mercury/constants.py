@@ -1,6 +1,4 @@
-import os
-
-DOCKER_COMMON_VOLUME = os.path.abspath("mercury/experimentation/common_volume")
 BASE_DOCKER_IMAGE_NAME = "jupyter-mercury"
-BASE_DOCKER_BIND_VOLUME = "/usr/src/app"
+BASE_DOCKER_HOME = "/home/jovyan"
+BASE_DOCKER_WORK_DIR = "work"
 DEFAULT_DOCKER_VOL_MODE = "rw"

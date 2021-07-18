@@ -56,6 +56,7 @@ def get_node_output_code_snippet(node: MercuryNode, edges: List[MercuryEdge]) ->
 
 def get_node_attrs(node: MercuryNode) -> dict:
     return {
+        "name": node.name,
         "input": node.input,
         "output": node.output,
         "image_attributes": {
@@ -74,7 +75,7 @@ def get_node_attrs(node: MercuryNode) -> dict:
             ),
         },
         "notebook_attributes": {
-            "url": f"http://localhost:{node.jupyter_port}/notebooks/work/scripts/Untitled.ipynb?kernel_name=python3",
+            "url": f"http://localhost:{node.jupyter_port}/notebooks/work/{node.name}.ipynb?kernel_name=python3",
             "state": None,
             "exit_code": -1,
             "container_log": None,

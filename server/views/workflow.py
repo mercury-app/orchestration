@@ -57,6 +57,7 @@ class WorkflowHandler(MercuryHandler):
         # workflows must be stopped. Otherwise there is a chance of their port mappings
         # colliding with each other and ports of existing containers cannot be changed.
         from mercury.docker_client import docker_cl
+
         logger.info("Killing already running containers...")
         [
             _.kill()
@@ -66,12 +67,14 @@ class WorkflowHandler(MercuryHandler):
 
         logger.info("Restoring a workflow...")
         dag = MercuryDag(dag_id)
+        dag.notebooks_dir = workflow_data.get("attributes").get("notebooks_dir")
 
         nodes_data = workflow_data.get("attributes").get("nodes")
         for node_data in nodes_data:
             node_id = node_data.get("id")
             node_attributes = node_data.get("attributes")
             node = MercuryNode(
+                node_attributes.get("name"),
                 node_id,
                 node_attributes.get("input"),
                 node_attributes.get("output"),
@@ -145,10 +148,11 @@ class WorkflowHandler(MercuryHandler):
             return
 
         dag_id = data.get("id")
-        if "attributes" in data:
+        if "attributes" in data and "nodes" in data.get("attributes"):
             dag = self._dag_from_workflow_data(data, dag_id)
         else:
             dag = MercuryDag(dag_id)
+            dag.notebooks_dir = data.get("attributes").get("notebooks_dir")
 
         self.application.workflows[dag.id] = dag
         data = self._workflow_data_from_dag(dag)

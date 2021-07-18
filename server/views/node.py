@@ -106,7 +106,9 @@ class NodeHandler(MercuryHandler):
         assert workflow_id in self.application.workflows
 
         data = json.loads(self.request.body)
-        node = MercuryNode(**data.get("attributes", {}))
+        node = MercuryNode(
+            data.get("data").get("attributes").get("name"), **data.get("attributes", {})
+        )
 
         # add the node to the dag first, as this sets the jupyter port
         self.application.workflows.get(workflow_id).add_node(node)
