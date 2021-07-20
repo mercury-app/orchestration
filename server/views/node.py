@@ -199,7 +199,7 @@ class NodeHandler(MercuryHandler):
         assert workflow_id in self.application.workflows
 
         node = self.application.workflows.get(workflow_id).get_node(node_id)
-        node.mercury_container.container.kill()
+        node.cleanup_before_deletion()
         self.application.workflows.get(workflow_id).remove_node(node)
 
         self.set_status(204)

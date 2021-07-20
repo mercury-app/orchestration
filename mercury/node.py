@@ -1,6 +1,7 @@
-import logging
-from uuid import uuid4
 import copy
+import logging
+import os
+from uuid import uuid4
 
 
 from mercury.docker_client import docker_cl
@@ -189,3 +190,10 @@ class MercuryNode:
         return self._mercury_container.write_variables_to_json(
             source_outputs, dest_inputs, json_fp
         )
+
+    def cleanup_before_deletion(self):
+        self.mercury_container.container.kill()
+
+        notebook_file_path = f"{self._notebook_dir}/{self._name}.ipynb"
+        if os.path.isfile(notebook_file_path):
+            os.remove(notebook_file_path)
