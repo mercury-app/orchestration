@@ -66,8 +66,9 @@ class WorkflowHandler(MercuryHandler):
         ]
 
         logger.info("Restoring a workflow...")
-        dag = MercuryDag(dag_id)
-        dag.notebooks_dir = workflow_data.get("attributes").get("notebooks_dir")
+        notebooks_dir = workflow_data.get("attributes").get("notebooks_dir")
+        port_range = workflow_data.get("attributes").get("port_range")
+        dag = MercuryDag(dag_id, notebooks_dir, port_range)
 
         nodes_data = workflow_data.get("attributes").get("nodes")
         for node_data in nodes_data:
@@ -151,8 +152,9 @@ class WorkflowHandler(MercuryHandler):
         if "attributes" in data and "nodes" in data.get("attributes"):
             dag = self._dag_from_workflow_data(data, dag_id)
         else:
-            dag = MercuryDag(dag_id)
-            dag.notebooks_dir = data.get("attributes").get("notebooks_dir")
+            notebooks_dir = data.get("attributes").get("notebooks_dir")
+            port_range = data.get("attributes").get("port_range")
+            dag = MercuryDag(dag_id, notebooks_dir, port_range)
 
         self.application.workflows[dag.id] = dag
         data = self._workflow_data_from_dag(dag)

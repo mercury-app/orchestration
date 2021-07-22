@@ -12,16 +12,13 @@ logger = logging.getLogger(__name__)
 
 
 class MercuryDag:
+    def __init__(self, id, notebooks_dir, port_range):
+        self.id = id
+        self._notebooks_dir = notebooks_dir
+        self._port_range = port_range
 
-    def __init__(self, id=None):
-        if id is not None:
-            self.id = id
-        else:
-            self.id = uuid4().hex
         self._nxdag = nx.DiGraph()
         self._state: str = None
-
-        self._notebooks_dir = ""
 
     @property
     def nodes(self) -> List[MercuryNode]:
@@ -31,24 +28,22 @@ class MercuryDag:
     def edges(self) -> list:
         return [_[2]["object"] for _ in self._nxdag.edges(data=True)]
 
-    @property
-    def notebooks_dir(self) -> str:
-        return self._notebooks_dir
-
-    @notebooks_dir.setter
-    def notebooks_dir(self, dir: str):
-        self._notebooks_dir = dir
-
     def add_node(self, node: MercuryNode) -> None:
         node.notebook_dir = self._notebooks_dir
 
         def is_port_in_use(port):
             import socket
-            with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
-                return s.connect_ex(('localhost', port)) == 0
 
+            with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+                return s.connect_ex(("localhost", port)) == 0
+
+        port_range_start, port_range_end = self._port_range
+        node.jupyter_port = port_range_start
         while is_port_in_use(node.jupyter_port):
             node.jupyter_port += 1
+        assert (
+            node.jupyter_port <= port_range_end
+        ), "Exhausted port-space for this project"
         logger.info(f"Starting container and mapping to port {node.jupyter_port}")
 
         self._nxdag.add_node(node, id=node.id)
