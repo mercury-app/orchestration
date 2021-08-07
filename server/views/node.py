@@ -318,10 +318,10 @@ class NodeNotebookHandler(MercuryHandler):
             ] = kernel_state
 
             # write to websocket here if a websocket is open and instantialised
-            if node_id in KernelInfoHandler._instances:
+            if node_id in KernelInfoHandler.instances:
                 try:
                     logger.info(f"sending message to websocket for node {node_id}")
-                    KernelInfoHandler._instances[node_id].write_message(response_data)
+                    KernelInfoHandler.instances[node_id].write_message(response_data)
                 except WebSocketClosedError as e:
                     logger.warning("tried writing to websocket but it is closed")
 
@@ -335,10 +335,10 @@ class NodeNotebookHandler(MercuryHandler):
             ] = workflow_kernel_state
 
             # write to websocket here if a websocket is open and instantialised
-            if node_id in KernelInfoHandler._instances:
+            if node_id in KernelInfoHandler.instances:
                 try:
                     logger.info(f"sending message to websocket for node {node_id}")
-                    KernelInfoHandler._instances[node_id].write_message(response_data)
+                    KernelInfoHandler.instances[node_id].write_message(response_data)
                 except WebSocketClosedError as e:
                     logger.warning("tried writing to websocket but it is closed")
 
@@ -364,10 +364,10 @@ class NodeNotebookHandler(MercuryHandler):
             ] = jupyter_server_state
 
             # write to websocket here if a websocket is open and instantialised
-            if node_id in KernelInfoHandler._instances:
+            if node_id in KernelInfoHandler.instances:
                 try:
                     logger.info(f"sending message to websocket for node {node_id}")
-                    KernelInfoHandler._instances[node_id].write_message(response_data)
+                    KernelInfoHandler.instances[node_id].write_message(response_data)
                 except WebSocketClosedError as e:
                     logger.warning("tried writing to websocket but it is closed")
 
@@ -377,17 +377,17 @@ class NodeNotebookHandler(MercuryHandler):
 
 
 class KernelInfoHandler(MercuryWsHandler):
-    _instances = dict()
+    instances = dict()
     json_type = "nodes"
 
     def open(self, node_id):
         if self.application.dag.get_node(node_id):
-            KernelInfoHandler._instances[node_id] = self
+            KernelInfoHandler.instances[node_id] = self
             logger.info(f"Websocket connection opened for node {node_id}")
         else:
             self.close(code=403, reason="tried connecting to a node that doesn't exist")
 
     def on_close(self):
         del_node_id = self.request.uri.split("/")[2]
-        if del_node_id in KernelInfoHandler._instances:
-            del KernelInfoHandler._instances[del_node_id]
+        if del_node_id in KernelInfoHandler.instances:
+            del KernelInfoHandler.instances[del_node_id]
