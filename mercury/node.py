@@ -132,8 +132,6 @@ class MercuryNode:
         cmd = "python3 -m container.cli run-notebook --notebook_path='work/scripts/Untitled.ipynb'"
         # detached state could be used for running multiple containers together in workflow run
         self._mercury_container.container.exec_run(cmd, detach=True)
-        # logger.info(f"exit code: {exit_code}")
-        # return exit_code, output
 
     def stop(self) -> str:
         logger.info("stopping notebook in container")
