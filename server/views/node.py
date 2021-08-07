@@ -372,7 +372,12 @@ class NodeNotebookHandler(MercuryHandler):
                     logger.warning("tried writing to websocket but it is closed")
 
         self.set_status(200)
-        self.write({"data": response_data})
+        response_data_resource = {
+            "id": node.id,
+            "type": self.json_type,
+            "attributes": response_data["attributes"]["notebook_attributes"],
+        }
+        self.write(response_data_resource)
         self.set_header("Content-Type", "application/vnd.api+json")
 
 
