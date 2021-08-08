@@ -1,4 +1,5 @@
 import tornado.web
+import tornado.websocket
 import logging
 from typing import List
 import json
@@ -27,3 +28,8 @@ class MercuryHandler(tornado.web.RequestHandler):
 
     def get(self):
         self.write("Welcome to Mercury")
+
+
+class MercuryWsHandler(tornado.websocket.WebSocketHandler):
+    def open(self):
+        logger.info("new websocket connection opened")
