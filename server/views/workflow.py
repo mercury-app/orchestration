@@ -48,7 +48,7 @@ class WorkflowHandler(MercuryHandler):
         data = {
             "id": dag.id,
             "type": self.json_type,
-            "attributes": get_workflow_attrs(self.application.dag),
+            "attributes": get_workflow_attrs(dag),
         }
         return data
 

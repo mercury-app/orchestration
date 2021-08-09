@@ -5,7 +5,7 @@ import os
 import json
 
 from mercury.node import MercuryNode
-from mercury.constants import DOCKER_COMMON_VOLUME, BASE_DOCKER_BIND_VOLUME
+from mercury.constants import BASE_DOCKER_HOME, BASE_DOCKER_WORK_DIR
 
 logger = logging.getLogger(__name__)
 
@@ -21,8 +21,10 @@ class MercuryEdge:
         self.id = uuid4().hex
         self._source_node = source_node
         self._dest_node = dest_node
-        self._json_path = f"{DOCKER_COMMON_VOLUME}/{self.id}.json"
-        self._json_path_container = f"{BASE_DOCKER_BIND_VOLUME}/{self.id}.json"
+        self._json_path = ""
+        self._json_path_container = (
+            f"{BASE_DOCKER_HOME}/{BASE_DOCKER_WORK_DIR}/{self.id}.json"
+        )
         self._json_inputs = None
 
         if os.path.exists(self._json_path):
@@ -63,6 +65,10 @@ class MercuryEdge:
     @property
     def json_path(self) -> str:
         return self._json_path
+
+    @json_path.setter
+    def json_path(self, path_json: str):
+        self._json_path = path_json
 
     @property
     def json_path_container(self) -> str:

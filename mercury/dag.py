@@ -56,6 +56,7 @@ class MercuryDag:
         assert edge.source_node
         assert edge.dest_node
 
+        edge.json_path = f"{self._notebooks_dir}/{edge.id}.json"
         self._nxdag.add_edge(edge.source_node, edge.dest_node, object=edge)
 
     def remove_edge(self, edge: MercuryEdge) -> None:
