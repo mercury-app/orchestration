@@ -174,20 +174,23 @@ class WorkflowHandler(MercuryHandler):
 
         assert data["data"]["attributes"]["state"] in ["run", "stop"]
 
+        assert workflow_id in self.application.workflows
+        dag = self.application.workflows.get(workflow_id)
+
         if data["data"]["attributes"]["state"] == "run":
-            self.application.dag.state = "running"
-            exit_code = await self.application.dag.run_dag()
-            self.application.dag.state = None
+            dag.state = "running"
+            exit_code = await dag.run_dag()
+            dag.state = None
 
         if data["data"]["attributes"]["state"] == "stop":
             logger.info("received stop signal")
-            self.application.dag.state = "stop"
+            dag.state = "stop"
             exit_code = 1
 
         response = {
-            "id": self.application.dag.id,
+            "id": dag.id,
             "type": self.json_type,
-            "attributes": get_workflow_attrs(self.application.dag),
+            "attributes": get_workflow_attrs(dag),
         }
         response["attributes"]["run_exit_code"] = exit_code
         self.write({"data": response})

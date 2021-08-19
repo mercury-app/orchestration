@@ -25,8 +25,8 @@ class Application(tornado.web.Application):
         self.workflows = {}
         self.handlers = [
             (r"/", MercuryHandler),
-            (r"/nodes/([^/\s]+)/notebook", NodeNotebookHandler),
-            (r"/nodes/([^/\s]+)/ws", KernelInfoHandler),
+            (r"/workflows/([^/\s]+)/nodes/([^/\s]+)/notebook", NodeNotebookHandler),
+            (r"/workflows/([^/\s]+)/nodes/([^/\s]+)/ws", KernelInfoHandler),
             (r"/workflows/([^/\s]+)/nodes/([^/\s]+)/image", NodeImageHandler),
             (r"/workflows/([^/\s]+)/nodes(?:/([^/\s]+))?", NodeHandler),
             (r"/workflows/([^/\s]+)/connectors(?:/([^/\s]+))?", ConnectorHandler),

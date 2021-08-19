@@ -1,6 +1,9 @@
 import copy
 import logging
 import os
+
+from networkx.algorithms.coloring.greedy_coloring import strategy_largest_first
+from server.views import workflow
 from uuid import uuid4
 
 
@@ -9,7 +12,7 @@ from mercury.constants import (
     DEFAULT_DOCKER_VOL_MODE,
     BASE_DOCKER_IMAGE_NAME,
     BASE_DOCKER_HOME,
-    BASE_DOCKER_WORK_DIR
+    BASE_DOCKER_WORK_DIR,
 )
 from mercury.container import MercuryContainer
 
@@ -27,6 +30,7 @@ class MercuryNode:
         docker_img_tag: str = None,
         docker_volume: str = None,  # TODO: make a default docker volume
         container_id: str = None,
+        workflow_id: str = None,
     ):
         self._name = name
 
@@ -47,13 +51,14 @@ class MercuryNode:
 
         self._notebook_dir = ""
         self._jupyter_port = 8880
+        self._workflow_id = workflow_id
 
     def __str__(self) -> str:
         return self.id
 
     @property
     def name(self) -> str:
-        return self._name;
+        return self._name
 
     @property
     def notebook_dir(self) -> str:
@@ -99,6 +104,14 @@ class MercuryNode:
     def jupyter_port(self, port: int) -> int:
         self._jupyter_port = port
 
+    @property
+    def workflow_id(self) -> str:
+        return self._workflow_id
+
+    @workflow_id.setter
+    def workflow_id(self, id: str):
+        self._workflow_id = id
+
     def initialise_container(self):
         """This should start the jupyter notebook inside the docker container
 
@@ -112,9 +125,10 @@ class MercuryNode:
         str
             container id of the running container
         """
+        logger.info(f"AAAaaaa  {self._workflow_id}")
         container_run = docker_cl.containers.run(
             BASE_DOCKER_IMAGE_NAME,
-            environment={"MERCURY_NODE": self.id},
+            environment={"MERCURY_NODE": self.id, "WORKFLOW_ID": self._workflow_id},
             volumes={
                 f"{self._notebook_dir}": {
                     "bind": f"{BASE_DOCKER_HOME}/{BASE_DOCKER_WORK_DIR}",
@@ -126,7 +140,7 @@ class MercuryNode:
         )
         self._mercury_container = MercuryContainer(container_run)
         exit_code, output = self._mercury_container.container.exec_run(
-            f"python3 create_notebook.py {BASE_DOCKER_WORK_DIR}/{self._name}.ipynb"
+            f"python3 -m container.cli create-notebook --name={BASE_DOCKER_WORK_DIR}/{self._name}.ipynb"
         )
         print(exit_code, output)
 
