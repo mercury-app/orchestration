@@ -12,8 +12,11 @@ logger = logging.getLogger(__name__)
 
 
 class MercuryDag:
-    def __init__(self):
-        self.id = uuid4().hex
+    def __init__(self, id, notebooks_dir, port_range):
+        self.id = id
+        self._notebooks_dir = notebooks_dir
+        self._port_range = port_range
+
         self._nxdag = nx.DiGraph()
         self._state: str = None
 
@@ -26,13 +29,23 @@ class MercuryDag:
         return [_[2]["object"] for _ in self._nxdag.edges(data=True)]
 
     def add_node(self, node: MercuryNode) -> None:
+        node.notebook_dir = self._notebooks_dir
 
-        if len(self._nxdag.nodes) > 0:
-            used_ports = [_.jupyter_port for _ in self._nxdag.nodes]
-            print(used_ports)
-            port = max(used_ports) + 1
-            logger.info(f"Starting new container and mapping to port {port}")
-            node.jupyter_port = port
+        def is_port_in_use(port):
+            import socket
+
+            with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+                return s.connect_ex(("localhost", port)) == 0
+
+        port_range_start, port_range_end = self._port_range
+        node.jupyter_port = port_range_start
+        while is_port_in_use(node.jupyter_port):
+            node.jupyter_port += 1
+        assert (
+            node.jupyter_port <= port_range_end
+        ), "Exhausted port-space for this project"
+        logger.info(f"Starting container and mapping to port {node.jupyter_port}")
+
         self._nxdag.add_node(node, id=node.id)
 
     def remove_node(self, node: MercuryNode) -> None:
@@ -43,6 +56,7 @@ class MercuryDag:
         assert edge.source_node
         assert edge.dest_node
 
+        edge.json_path = f"{self._notebooks_dir}/{edge.id}.json"
         self._nxdag.add_edge(edge.source_node, edge.dest_node, object=edge)
 
     def remove_edge(self, edge: MercuryEdge) -> None:
@@ -63,13 +77,13 @@ class MercuryDag:
             return edge_search[0]
 
     def get_edge_from_nodes(
-        self, source_node_id: str, detination_node_id: str
+        self, source_node_id: str, destination_node_id: str
     ) -> MercuryEdge:
         edge_search = [
             _
             for _ in self.edges
             if _.source_node.id == source_node_id
-            and _.dest_node.id == detination_node_id
+            and _.dest_node.id == destination_node_id
         ]
         assert len(edge_search) < 3
         if len(edge_search) == 1:

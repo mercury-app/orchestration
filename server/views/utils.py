@@ -56,6 +56,7 @@ def get_node_output_code_snippet(node: MercuryNode, edges: List[MercuryEdge]) ->
 
 def get_node_attrs(node: MercuryNode) -> dict:
     return {
+        "name": node.name,
         "input": node.input,
         "output": node.output,
         "image_attributes": {
@@ -64,11 +65,17 @@ def get_node_attrs(node: MercuryNode) -> dict:
             "state": None,
         },
         "container_attributes": {
-            "id": node.mercury_container.container_id,
-            "state": node.mercury_container.container_state["Status"],
+            "id": (
+                node.mercury_container.container_id if node.mercury_container else None
+            ),
+            "state": (
+                node.mercury_container.container_state["Status"]
+                if node.mercury_container
+                else None
+            ),
         },
         "notebook_attributes": {
-            "url": f"http://localhost:{node.jupyter_port}/notebooks/work/scripts/Untitled.ipynb?kernel_name=python3",
+            "url": f"http://localhost:{node.jupyter_port}/notebooks/work/{node.name}.ipynb?kernel_name=python3",
             "state": None,
             "exit_code": -1,
             "container_log": None,
@@ -81,6 +88,15 @@ def get_node_attrs(node: MercuryNode) -> dict:
         },
     }
 
+
+def get_connector_attrs(edge: MercuryEdge, src_dest_map: dict):
+    return {
+        "source": {**src_dest_map["source"], "node_id": edge.source_node.id},
+        "destination": {
+            **src_dest_map["destination"],
+            "node_id": edge.dest_node.id,
+        },
+    }
 
 def get_workflow_attrs(dag: MercuryDag) -> dict:
     nodes = [{"id": node.id, "type": "nodes"} for node in dag.nodes]

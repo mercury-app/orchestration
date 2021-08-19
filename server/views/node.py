@@ -5,7 +5,7 @@ from tornado.websocket import WebSocketClosedError
 
 from mercury.node import MercuryNode
 
-from server.views import MercuryHandler, MercuryWsHandler
+from server.views import MercuryHandler, MercuryWsHandler, workflow
 from server.views.utils import (
     get_node_attrs,
     get_node_input_code_snippet,
@@ -21,7 +21,7 @@ class NodeHandler(MercuryHandler):
     # decorator to wrap and create a json api response, wrap in data, attributes, types
     json_type = "nodes"
 
-    def get(self, node_id=None):
+    def get(self, workflow_id, node_id=None):
         """Returns the node(s) available
         ---
         tags: [Nodes]
@@ -43,11 +43,15 @@ class NodeHandler(MercuryHandler):
                             items:
                                 NoSchema
         """
+        assert workflow_id in self.application.workflows
+
+        dag = self.application.workflows.get(workflow_id)
+
         if node_id:
-            node = self.application.dag.get_node(node_id)
+            node = dag.get_node(node_id)
             nodes = [node]
         else:
-            nodes = self.application.dag.nodes
+            nodes = dag.nodes
 
         data = []
 
@@ -58,7 +62,7 @@ class NodeHandler(MercuryHandler):
                 "attributes": get_node_attrs(node),
             }
 
-            edges = self.application.dag.get_node_edges(node.id)
+            edges = dag.get_node_edges(node.id)
             logger.info(f"edges for this node: {len(edges)}")
             input_code = get_node_input_code_snippet(node, edges)
             output_code = get_node_output_code_snippet(node, edges)
@@ -76,7 +80,7 @@ class NodeHandler(MercuryHandler):
         self.set_header("Content-Type", "application/vnd.api+json")
 
     # _ parameter added as post expects two arguments from route
-    def post(self, _):
+    def post(self, workflow_id, _):
         """Creates a new node and runs its container
         ---
         tags: [Nodes]
@@ -101,11 +105,16 @@ class NodeHandler(MercuryHandler):
                             items:
                                 NoSchema
         """
+        assert workflow_id in self.application.workflows
+
         data = json.loads(self.request.body)
-        node = MercuryNode(**data.get("attributes", {}))
+        node = MercuryNode(
+            data.get("data").get("attributes").get("name"), **data.get("attributes", {})
+        )
+        node.workflow_id = workflow_id
 
         # add the node to the dag first, as this sets the jupyter port
-        self.application.dag.add_node(node)
+        self.application.workflows.get(workflow_id).add_node(node)
 
         node.initialise_container()
 
@@ -120,7 +129,7 @@ class NodeHandler(MercuryHandler):
         self.write({"data": data})
         self.set_header("Content-Type", "application/vnd.api+json")
 
-    def patch(self, node_id):
+    def patch(self, workflow_id, node_id):
         """Updates properties of a node
         ---
         tags: [Nodes]
@@ -142,8 +151,12 @@ class NodeHandler(MercuryHandler):
                             items:
                                 NoSchema
         """
+        assert workflow_id in self.application.workflows
+
+        dag = self.application.workflows.get(workflow_id)
+
         data = json.loads(self.request.body)
-        node = self.application.dag.get_node(node_id)
+        node = dag.get_node(node_id)
 
         node.input = data["data"].get("attributes", {}).get("input", node.input)
         node.output = data["data"].get("attributes", {}).get("output", node.output)
@@ -154,7 +167,7 @@ class NodeHandler(MercuryHandler):
             "attributes": get_node_attrs(node),
         }
 
-        edges = self.application.dag.get_node_edges(node.id)
+        edges = dag.get_node_edges(node.id)
         input_code = get_node_input_code_snippet(node, edges)
         output_code = get_node_output_code_snippet(node, edges)
         data["attributes"]["notebook_attributes"]["io"]["input_code"] = input_code
@@ -166,7 +179,7 @@ class NodeHandler(MercuryHandler):
 
         # to do: updation for other properties
 
-    def delete(self, node_id):
+    def delete(self, workflow_id, node_id):
         """Deletes the node
         ---
         tags: [Nodes]
@@ -188,9 +201,11 @@ class NodeHandler(MercuryHandler):
                             items:
                                 NoSchema
         """
-        node = self.application.dag.get_node(node_id)
-        node.mercury_container.container.kill()
-        self.application.dag.remove_node(node)
+        assert workflow_id in self.application.workflows
+
+        node = self.application.workflows.get(workflow_id).get_node(node_id)
+        node.cleanup_before_deletion()
+        self.application.workflows.get(workflow_id).remove_node(node)
 
         self.set_status(204)
         self.set_header("Content-Type", "application/vnd.api+json")
@@ -201,9 +216,12 @@ class NodeHandler(MercuryHandler):
 class NodeImageHandler(MercuryHandler):
     json_type = "nodes"
 
-    def patch(self, node_id):
+    def patch(self, workflow_id, node_id):
         data = json.loads(self.request.body)
-        node = self.application.dag.get_node(node_id)
+
+        assert workflow_id in self.application.workflows
+        dag = self.application.workflows.get(workflow_id)
+        node = dag.get_node(node_id)
 
         assert data["data"].get("type") == "nodes"
         assert data["data"].get("id") == node_id
@@ -222,7 +240,7 @@ class NodeImageHandler(MercuryHandler):
             "attributes": get_node_attrs(node),
         }
 
-        edges = self.application.dag.get_node_edges(node.id)
+        edges = dag.get_node_edges(node.id)
         code = get_node_input_code_snippet(node, edges)
         data["attributes"]["notebook_attributes"]["io"]["input_code"] = code
 
@@ -234,9 +252,12 @@ class NodeImageHandler(MercuryHandler):
 class NodeNotebookHandler(MercuryHandler):
     json_type = "nodes"
 
-    async def patch(self, node_id):
+    async def patch(self, workflow_id, node_id):
         data = json.loads(self.request.body)
-        node = self.application.dag.get_node(node_id)
+
+        assert workflow_id in self.application.workflows
+        dag = self.application.workflows.get(workflow_id)
+        node = dag.get_node(node_id)
 
         assert data["data"].get("type") == "nodes"
         assert data["data"].get("id") == node_id
@@ -261,7 +282,7 @@ class NodeNotebookHandler(MercuryHandler):
             "attributes": get_node_attrs(node),
         }
 
-        edges = self.application.dag.get_node_edges(node.id)
+        edges = dag.get_node_edges(node.id)
         input_code = get_node_input_code_snippet(node, edges)
         output_code = get_node_output_code_snippet(node, edges)
         response_data["attributes"]["notebook_attributes"]["io"][
@@ -282,7 +303,7 @@ class NodeNotebookHandler(MercuryHandler):
                 exit_code, container_output = node.execute_code(code)
 
             if change_state == "write_json":
-                edges = self.application.dag.get_node_edges(node.id)
+                edges = dag.get_node_edges(node.id)
                 container_output = "".encode()
                 exit_code = -1
                 if not edges:
@@ -385,8 +406,9 @@ class KernelInfoHandler(MercuryWsHandler):
     instances = dict()
     json_type = "nodes"
 
-    def open(self, node_id):
-        if self.application.dag.get_node(node_id):
+    def open(self, workflow_id, node_id):
+        dag = self.application.workflows.get(workflow_id)
+        if dag.get_node(node_id):
             KernelInfoHandler.instances[node_id] = self
             logger.info(f"Websocket connection opened for node {node_id}")
         else:

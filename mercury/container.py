@@ -127,3 +127,14 @@ class MercuryContainer:
             print(container_output)
 
         return exit_code, container_output
+
+    @classmethod
+    def find(self, container_id):
+        from docker import errors as docker_errors
+        from mercury.docker_client import docker_cl
+        try:
+            container = docker_cl.containers.get(container_id)
+            return MercuryContainer(container)
+        except docker_errors.NotFound:
+            logger.error(f"Container with ID {container_id} not found")
+        return None
